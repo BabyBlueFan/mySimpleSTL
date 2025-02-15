@@ -4,7 +4,6 @@
 #define __THIN_VECTOR__
 
 #include <iostream>
-#include "thin_vector_iterator.hpp"
 
 namespace thinSTL {
     template< typename T >
