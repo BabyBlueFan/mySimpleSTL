@@ -20,6 +20,27 @@ void printVec( thin_vector< T >& arg ) {
     return;
 }
 
+class tstClass {
+private:
+    int a;
+    double b;
+    
+public:
+    tstClass( int _a = 0, double _b = 0 ) : a(_a), b(_b) {
+        cout << "tstClass 默认构造\n"; 
+    }
+    ~tstClass() {
+        cout << "tstClass 析构\n";
+    }
+    friend std::ostream& operator<<(std::ostream& os, const tstClass& obj);
+};
+
+std::ostream& operator<<( std::ostream& os, const tstClass& obj ) {
+    os << obj.a << " and " << obj.b ;
+    return os;
+}
+
+
 //测试构造函数
 void test01( void ) {
     //测试填充构造函数
@@ -41,7 +62,89 @@ void test01( void ) {
     return;
 }
 
+//赋值操作符
+void test02( void ) {
+    thin_vector< tstClass > vec1 = { tstClass(), tstClass(), tstClass() };
+    thin_vector< tstClass > vec2 = { tstClass( 5, 55 ), tstClass( 6,66) };
+    printVec( vec2 );
+    vec2 = { tstClass( 1, 1 ), tstClass(1, 1), tstClass(1, 1 ) };
+    printVec( vec2 );
+    vec2 = std::move( vec1 );
+    printVec( vec1 );
+    printVec( vec2 );
+    cout << "size = " << vec2.size() << " cap = " << vec2.capacity() << endl;
+    vec2.at(0) = tstClass( 4, 4 );
+    vec2[1] = tstClass( 8, 8 );
+    vec2.at(2) = tstClass( 5, 5 );
+    printVec( vec2 );
+    cout << vec2.front() << endl;
+    cout << vec2.back() << endl;
+    vec2.back() = tstClass( 100, 88 );
+    printVec( vec2 );
+    // auto p = vec2.data();
+    // vec2.at(3) = tstClass( 6, 6 );
+}
+
+//容量相关操作
+void test03( void ) {
+    thin_vector<std::string> vec;
+    // 使用 emplace_back 插入元素
+    vec.emplace_back("Hello");
+    cout << "size = " << vec.size() << " capacity = " << vec.capacity() << endl;
+    vec.emplace_back("World");
+    cout << "size = " << vec.size() << " capacity = " << vec.capacity() << endl;
+    vec.emplace_back(10, 'x'); // 插入一个包含 10 个 'x' 的字符串
+    cout << "size = " << vec.size() << " capacity = " << vec.capacity() << endl;
+    printVec( vec );
+   /*  thin_vector< tstClass > i_vec = { tstClass(1,1), tstClass(2,2), tstClass(3,3) };
+    i_vec.reserve(15);
+    i_vec.resize( 10, tstClass(9, 9) );
+    cout << "size = " << i_vec.size() << " capacity = " << i_vec.capacity() << endl;
+    printVec( i_vec ); */
+   /*  cout << "size = " << i_vec.size() << " capacity = " << i_vec.capacity() << endl;
+    tstClass bb( 12, 99 );
+    i_vec.push_back( std::move( bb ) );
+    cout << "size = " << i_vec.size() << " capacity = " << i_vec.capacity() << endl;
+    printVec( i_vec );
+    i_vec.pop_back();
+    cout << "size = " << i_vec.size() << " capacity = " << i_vec.capacity() << endl;
+    printVec( i_vec ); */
+ /*    const auto iter = i_vec.begin();
+    // i_vec.erase( iter+1 , i_vec.end() );
+    // cout << *(i_vec.erase( iter+1 , i_vec.end() ) ) << endl;
+    if ( i_vec.erase( iter , i_vec.end() ) ==  i_vec.end() ) {
+        cout << "aaa" << endl;
+    } 
+
+    cout << "size = " << i_vec.size() << " capacity = " << i_vec.capacity() << endl;
+    printVec( i_vec ); */
+   /*  const auto iter = i_vec.begin();
+    // iter = iter + 2;
+    std::list< int > lst = { 1, 2, 3, 4, 5 };
+    i_vec.insert( iter+2, { 44, 55, 66 } );
+    cout << "size = " << i_vec.size() << " capacity = " << i_vec.capacity() << endl;
+    printVec( i_vec ); */
+    // i_vec.shrink_to_fit();
+    // cout << "size = " << i_vec.size() << " capacity = " << i_vec.capacity() << endl;
+    // i_vec.reserve( 100 );
+    // printVec( i_vec );
+    // cout << "size = " << i_vec.size() << " capacity = " << i_vec.capacity() << endl;
+    // i_vec.shrink_to_fit();
+    // cout << "size = " << i_vec.size() << " capacity = " << i_vec.capacity() << endl;
+    // thin_vector< int > ii_vec{ 100 };
+    // cout << "size = " << ii_vec.size() << " capacity = " << ii_vec.capacity() << endl;
+    // i_vec.reserve( 55 );
+    // ii_vec.swap( i_vec );
+    // printVec( i_vec );
+    // printVec( ii_vec );
+    // cout << "size = " << i_vec.size() << " capacity = " << i_vec.capacity() << endl;
+    // cout << "size = " << ii_vec.size() << " capacity = " << ii_vec.capacity() << endl;
+    // thin_vector< int >( ii_vec ).swap(ii_vec );
+    // printVec( ii_vec );
+    // cout << "size = " << ii_vec.size() << " capacity = " << ii_vec.capacity() << endl;
+}
+
 int main( void ) {
-    test01();
+    test03();
     return 0;
 }
