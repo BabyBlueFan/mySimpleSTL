@@ -87,15 +87,43 @@ void test02( void ) {
 
 //容量相关操作
 void test03( void ) {
-    thin_vector< int > i_vec{ 8, 7, 6 };
+    thin_vector<std::string> vec;
+    // 使用 emplace_back 插入元素
+    vec.emplace_back("Hello");
+    cout << "size = " << vec.size() << " capacity = " << vec.capacity() << endl;
+    vec.emplace_back("World");
+    cout << "size = " << vec.size() << " capacity = " << vec.capacity() << endl;
+    vec.emplace_back(10, 'x'); // 插入一个包含 10 个 'x' 的字符串
+    cout << "size = " << vec.size() << " capacity = " << vec.capacity() << endl;
+    printVec( vec );
+   /*  thin_vector< tstClass > i_vec = { tstClass(1,1), tstClass(2,2), tstClass(3,3) };
+    i_vec.reserve(15);
+    i_vec.resize( 10, tstClass(9, 9) );
+    cout << "size = " << i_vec.size() << " capacity = " << i_vec.capacity() << endl;
+    printVec( i_vec ); */
+   /*  cout << "size = " << i_vec.size() << " capacity = " << i_vec.capacity() << endl;
+    tstClass bb( 12, 99 );
+    i_vec.push_back( std::move( bb ) );
     cout << "size = " << i_vec.size() << " capacity = " << i_vec.capacity() << endl;
     printVec( i_vec );
-    const auto iter = i_vec.begin();
+    i_vec.pop_back();
+    cout << "size = " << i_vec.size() << " capacity = " << i_vec.capacity() << endl;
+    printVec( i_vec ); */
+ /*    const auto iter = i_vec.begin();
+    // i_vec.erase( iter+1 , i_vec.end() );
+    // cout << *(i_vec.erase( iter+1 , i_vec.end() ) ) << endl;
+    if ( i_vec.erase( iter , i_vec.end() ) ==  i_vec.end() ) {
+        cout << "aaa" << endl;
+    } 
+
+    cout << "size = " << i_vec.size() << " capacity = " << i_vec.capacity() << endl;
+    printVec( i_vec ); */
+   /*  const auto iter = i_vec.begin();
     // iter = iter + 2;
     std::list< int > lst = { 1, 2, 3, 4, 5 };
     i_vec.insert( iter+2, { 44, 55, 66 } );
     cout << "size = " << i_vec.size() << " capacity = " << i_vec.capacity() << endl;
-    printVec( i_vec );
+    printVec( i_vec ); */
     // i_vec.shrink_to_fit();
     // cout << "size = " << i_vec.size() << " capacity = " << i_vec.capacity() << endl;
     // i_vec.reserve( 100 );

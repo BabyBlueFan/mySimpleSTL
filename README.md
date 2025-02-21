@@ -67,14 +67,14 @@ C++ STL的学习和简单地实现
 - [x] `iterator insert(const_iterator pos, size_type count, const T& value)`
 - [x] `template <class InputIt> iterator insert(const_iterator pos, InputIt first, InputIt last)`
 - [x] `iterator insert(const_iterator pos, initializer_list<T> ilist)` (C++11)
-- [ ] `iterator erase(const_iterator pos)`
-- [ ] `iterator erase(const_iterator first, const_iterator last)`
-- [ ] `void push_back(const T& value)`
-- [ ] `void push_back(T&& value)` (C++11)
-- [ ] `template <class... Args> void emplace_back(Args&&... args)` (C++11, 就地构造元素)
-- [ ] `void pop_back()`
-- [ ] `void resize(size_type count)`
-- [ ] `void resize(size_type count, const T& value)`
+- [x] `iterator erase(const_iterator pos)`
+- [x] `iterator erase(const_iterator first, const_iterator last)`
+- [x] `void push_back(const T& value)`
+- [x] `void push_back(T&& value)` (C++11)
+- [x] `template <class... Args> void emplace_back(Args&&... args)` (C++11, 就地构造元素)
+- [x] `void pop_back()`
+- [x] `void resize(size_type count)`
+- [x] `void resize(size_type count, const T& value)`
 - [x] `void swap(vector& other)`
 
 
