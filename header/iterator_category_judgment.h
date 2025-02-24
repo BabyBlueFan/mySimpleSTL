@@ -8,7 +8,17 @@
 
 #include <iostream>
 
+
 namespace thinContainers {
+    // 判断是否是输入迭代器
+    template< typename T, typename = void >
+    struct _is_input_iterator : std::false_type {};
+    template < typename T >
+    struct _is_input_iterator< T, 
+                        std::void_t< typename std::iterator_traits< T >::iterator_category::input_iterator_tag > 
+                        >: std::true_type {};
+
+#if 0
     //迭代器的五种类型
     struct input_iterator_tag {};
     struct output_iterator_tag {};
@@ -26,6 +36,9 @@ namespace thinContainers {
         using pointer = Pointer;
         using reference = Reference;
     };
+
+
+#endif
 } //thinContainers
 
 

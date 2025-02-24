@@ -8,16 +8,17 @@
 #include <new>
 #include <initializer_list>
 #include <type_traits>
+#include "iterator_category_judgment.h"
 
 namespace thinContainers {
     #define SCALEOUT 2
-    // 判断是否是输入迭代器
+   /*  // 判断是否是输入迭代器
     template< typename T, typename = void >
     struct _is_input_iterator : std::false_type {};
     template < typename T >
     struct _is_input_iterator< T, 
                         std::void_t< typename std::iterator_traits< T >::iterator_category::input_iterator_tag > 
-                        >: std::true_type {};
+                        >: std::true_type {}; */
 
     template < typename T, typename Alloc = std::allocator< T >  >
     class thin_vector {

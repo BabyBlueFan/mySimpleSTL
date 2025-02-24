@@ -87,15 +87,8 @@ void test02( void ) {
 
 //容量相关操作
 void test03( void ) {
-    thin_vector< int > i_vec{ 8, 7, 6 };
-    cout << "size = " << i_vec.size() << " capacity = " << i_vec.capacity() << endl;
-    printVec( i_vec );
-    const auto iter = i_vec.begin();
-    // iter = iter + 2;
-    std::list< int > lst = { 1, 2, 3, 4, 5 };
-    i_vec.insert( iter+2, { 44, 55, 66 } );
-    cout << "size = " << i_vec.size() << " capacity = " << i_vec.capacity() << endl;
-    printVec( i_vec );
+    thin_vector< int > i_vec( 7, 8 );
+    thin_vector< int> ii( i_vec.begin(), i_vec.end() );
     // i_vec.shrink_to_fit();
     // cout << "size = " << i_vec.size() << " capacity = " << i_vec.capacity() << endl;
     // i_vec.reserve( 100 );

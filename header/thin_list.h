@@ -9,6 +9,7 @@
 #include <new>
 #include <initializer_list>
 #include <type_traits>
+#include "iterator_category_judgment.h"
 
 namespace thinContainers {
 
@@ -169,7 +170,51 @@ namespace thinContainers {
                 push_back( elem );
             }
         }
+        //移动构造函数
+        thin_list( thin_list&& other ) {
+            m_p_sentinel = other.m_p_sentinel;
+            m_size = other.m_size;
+            other.m_p_sentinel = nullptr; other.m_size = 0;
+        }
+        //填充构造函数
+        explicit thin_list( size_type cnt, const T& value) : thin_list() {
+            for ( size_type i = 0; i != cnt; ++i ) {
+                push_back( value );
+            }
+        }
+        //初始化列表构造
+        thin_list( const std::initializer_list< T >& initlst ) : thin_list() {
+            auto iter = initlst.begin();
+            while ( iter != initlst.end() ) {
+                push_back( *(iter++) );
+            }
+        }
+        //范围构造函数
+        template < typename InputIter, 
+                   typename std::enable_if< _is_input_iterator< InputIter >::value>::type* = nullptr > 
+        thin_list(InputIter first, InputIter last) : thin_list() {
+            auto iter = first;
+            while ( iter != last ) {
+                push_back( *(iter++) );
+            }
+        }
 
+        //析构函数 
+        ~thin_list() {
+            // m_destroy()
+            node_type* ptr = m_p_sentinel->_m_p_next;
+            while ( ptr != m_p_sentinel ) {
+                m_destroy( ptr );
+                ptr = ptr->_m_p_next;
+            }
+            ptr = m_p_sentinel->_m_p_next;
+            // m_deallocate( ptr, m_size );
+            while ( ptr != m_p_sentinel ) {
+                m_deallocate( ptr );
+                ptr = ptr->_m_p_next;
+            }
+            m_deallocate( ptr );
+        }
         //push_back()
         void push_back( const T& elem ) {
             node_type* ptr =  m_allocate();
@@ -192,34 +237,56 @@ namespace thinContainers {
             return m_size;
         }
         //begin()
-        iterator begin() {
+        iterator begin() noexcept {
             return iterator( m_p_sentinel->_m_p_next );
         }
-        const_iterator begin() const {
+        const_iterator begin() const noexcept {
             return const_iterator( m_p_sentinel->_m_p_next );
         }
-        iterator end() {
+        const_iterator cbegin() const noexcept {
+            return const_iterator( m_p_sentinel->_m_p_next );
+        }
+        //end()
+        iterator end() noexcept {
             return iterator( m_p_sentinel );
         }
-        const_iterator end() const {
+        const_iterator end() const noexcept {
             return const_iterator( m_p_sentinel );
+        }
+        const_iterator cend() const noexcept {
+            return const_iterator( m_p_sentinel );
+        }
+        //front()返回首元素的引用（列表为空时行为未定义）
+        reference front() {
+           return  (*begin());
+        }
+        const_reference front() const {
+            return (*cbegin());
+        }
+        // 返回尾元素的引用（列表为空时行为未定义）
+        reference back() {
+            // return (m_p_sentinel->_m_p_prev->_m_data);
+            return *( --end() );
+        }
+        const_reference back() const {
+            return *(--cend());
         }
     protected:
         //申请一个节点（__list_node< T >）的内存空间  
-        node_type*  m_allocate( size_type n = 1 ) {
+        inline node_type*  m_allocate( size_type n = 1 ) {
             return get_allocator().allocate( n );
         }
         //释放一个节点内存空间
-        void m_deallocate( node_type* ptr, size_type n = 1 ) {
+        inline void m_deallocate( node_type* ptr, size_type n = 1 ) {
             get_allocator().deallocate( ptr , n );
         }
         //构造一个节点
         template < typename... Args >
-        void m_construct( node_type* ptr, Args&&... args ) {
+        inline void m_construct( node_type* ptr, Args&&... args ) {
             get_allocator().construct( ptr, std::forward< node_type >(args)... );
         }
         //析构一个节点
-        void m_destroy( node_type* ptr ) {
+        inline void m_destroy( node_type* ptr ) {
             get_allocator().destroy( ptr );
         }
     }; //thin_list
