@@ -234,10 +234,61 @@ namespace thinContainers {
             new (m_finish) T(value);
             ++m_finish;
         }
+        void push_back(T&& value) {
+            if ( size() == capacity() ) {
+                m_spaceToBig();
+            }
+            new (m_finish) T(value);
+            // *m_finish = std::move( value );
+            get_allocator().destroy( &value );
+            ++m_finish;
+        }
+        //pop_back() 
+        void pop_back() {
+            get_allocator().destroy( --m_finish );
+        }
+        //resise()
+        void resize(size_type new_size) {
+            if ( new_size > size() ) {
+                if ( new_size > capacity() ) {
+                    _m_spaceToBig( new_size );
+                }
+                size_type cnt = new_size - size();
+                for ( size_type i = 0; i != cnt; ++i ) {
+                    new ( m_finish + i ) T();
+                }
+                m_finish = m_finish + cnt;
 
+            } else {
+                size_type cnt = size() - new_size;
+                for ( size_type i = 0; i != cnt; ++i ) {
+                    get_allocator().destroy( m_finish - 1 - i );
+                }
+                m_finish = m_finish - cnt;
+            }
+        }
+        void resize(size_type new_size, const T& value) {
+            if ( new_size > size() ) {
+                if ( new_size > capacity() ) {
+                    _m_spaceToBig( new_size );
+                }
+                size_type cnt = new_size - size();
+                for ( size_type i = 0; i != cnt; ++i ) {
+                    new ( m_finish + i ) T( value );
+                }
+                m_finish = m_finish + cnt;
+
+            } else {
+                size_type cnt = size() - new_size;
+                for ( size_type i = 0; i != cnt; ++i ) {
+                    get_allocator().destroy( m_finish - 1 - i );
+                }
+                m_finish = m_finish - cnt;
+            }
+        }
         //插入insert操作
         iterator insert(const_iterator posIter, const T& value) {
-            if ( !m_is_iter_range( posIter ) ) {
+            if ( posIter > m_finish || posIter < m_start ) {
                 std::cerr << "out_of_range\n ";
                 exit(1);
             }
@@ -252,7 +303,7 @@ namespace thinContainers {
             return m_start + offset;
         }
         iterator insert(const_iterator posIter, T&& value) {
-            if ( !m_is_iter_range( posIter ) ) {
+            if ( posIter > m_finish || posIter < m_start ) {
                 std::cerr << "out_of_range\n ";
                 exit(1);
             }
@@ -262,12 +313,13 @@ namespace thinContainers {
             }
             new (m_finish) T();
             std::copy_backward( m_start + offset, m_finish, m_finish+1 );
-            *(m_start+offset) = std::move( value );
+            // *(m_start+offset) = std::move( value );
+            get_allocator().destroy( &value );
             ++m_finish;
             return m_start + offset;
         }
         iterator insert(const_iterator posIter, size_type count, const T& value) {
-            if ( !m_is_iter_range( posIter ) ) {
+            if ( posIter > m_finish || posIter < m_start) {
                 std::cerr << "out_of_range\n ";
                 exit(1);
             }
@@ -291,7 +343,7 @@ namespace thinContainers {
         template < typename  InputIter, 
                    typename std::enable_if< _is_input_iterator< InputIter >::value>::type* = nullptr >    
         iterator insert( const_iterator posIter, InputIter first, InputIter last ) {
-            if ( !m_is_iter_range( posIter ) ) {
+            if ( posIter > m_finish || posIter < m_start  ) {
                 std::cerr << "out_of_range\n ";
                 exit(1);
             }
@@ -308,98 +360,128 @@ namespace thinContainers {
             m_finish = m_finish + cnt;
             return m_start +offset;
         }
-    iterator insert(const_iterator posIter, const std::initializer_list<T>& ilist) {
-        if ( !m_is_iter_range( posIter ) ) {
-            std::cerr << "out_of_range\n ";
-            exit(1);
-        }
-        difference_type offset = posIter - m_start;
-        size_type cnt = ilist.size();
-        if ( size() + cnt > capacity() ) {
-            _m_spaceToBig( size() + cnt );
-        } 
-        for ( size_type i = 0; i != cnt; ++i ) {
-            new (m_finish+i) T();
-        }
-        std::copy_backward( m_start+offset, m_finish, m_finish+cnt );
-        std::copy_backward( ilist.begin(), ilist.end(), m_start+offset+cnt );
-        m_finish = m_finish + cnt;
-        return m_start +offset;
+        iterator insert(const_iterator posIter, const std::initializer_list<T>& ilist) {
+            if ( posIter > m_finish || posIter < m_start ) {
+                std::cerr << "out_of_range\n ";
+                exit(1);
+            }
+            difference_type offset = posIter - m_start;
+            size_type cnt = ilist.size();
+            if ( size() + cnt > capacity() ) {
+                _m_spaceToBig( size() + cnt );
+            } 
+            for ( size_type i = 0; i != cnt; ++i ) {
+                new (m_finish+i) T();
+            }
+            std::copy_backward( m_start+offset, m_finish, m_finish+cnt );
+            std::copy_backward( ilist.begin(), ilist.end(), m_start+offset+cnt );
+            m_finish = m_finish + cnt;
+            return m_start +offset;
 
-    }
+        }
+        template <class... Args> 
+        void emplace_back(Args&&... args) {
+            if ( size() == capacity() ) {
+                m_spaceToBig();
+            }
+            new ( m_finish ) T(std::forward<Args>(args)...);
+            m_finish += 1;
+        }
+        //删除函数
+        iterator erase( const_iterator posIter ) {
+            if ( posIter >= m_finish || posIter < m_start ) {
+                std::cerr << "out_of_range\n ";
+                exit(1);
+            }
+            std::copy_backward( iterator(posIter+1), m_finish, m_finish-1 );
+            get_allocator().destroy(m_finish-1);
+            m_finish = m_finish - 1;
+            return iterator(posIter);
+        }
+        iterator erase(const_iterator first, const_iterator last) {
+            if ( (last <= first) || (first >= m_finish || first < m_start)
+                    || (last > m_finish || last < m_start) ) {
+                    std::cerr << "out_of_range\n ";
+                    exit(1);
+            }
+            size_type cnt = last -first;
+            // std::copy_backward( last, m_finish, first + ( m_finish - last ) );
+            std::copy_backward( (iterator)last, m_finish, m_finish - cnt );
+            for ( size_type i = 0; i != cnt; ++i ) {
+                get_allocator().destroy( m_finish-1 -i );
+            }
+            m_finish = m_finish - cnt;
+            return iterator(first);
+        }
 
     protected:
-    inline void m_destroy() {
-        iterator current = m_start;
-        while ( current != m_finish ) {
-            get_allocator().destroy( current++ );
+        inline void m_destroy() {
+            iterator current = m_start;
+            while ( current != m_finish ) {
+                get_allocator().destroy( current++ );
+            }
         }
-    }
-    inline void m_destroy( iterator first, iterator last ) {
-        while ( first != last ) {
-            get_allocator().destroy( first++ );
+        inline void m_destroy( iterator first, iterator last ) {
+            while ( first != last ) {
+                get_allocator().destroy( first++ );
+            }
         }
-    }
-    inline void m_destroy_delete( iterator _start, size_type _end_destroy, size_type _end_delete = 0 ) {
-        iterator current = _start;
-        //析构对象
-        while ( _end_destroy != 0 ) {
-            get_allocator().destroy( current++ );
-            --_end_destroy;
+        inline void m_destroy_delete( iterator _start, size_type _end_destroy, size_type _end_delete = 0 ) {
+            iterator current = _start;
+            //析构对象
+            while ( _end_destroy != 0 ) {
+                get_allocator().destroy( current++ );
+                --_end_destroy;
+            }
+            //释放原空间
+            if ( 0 != _end_delete ) {
+                get_allocator().deallocate( _start, _end_delete );
+            }
         }
-        //释放原空间
-        if ( 0 != _end_delete ) {
-            get_allocator().deallocate( _start, _end_delete );
-        }
-    }
 
-    //空间扩容
-    inline void m_spaceToBig( bool is_copy = true ) {
-        if ( capacity() == 0 ) {
-            m_start = get_allocator().allocate( 1 );
-            m_finish = m_start;
-            m_end_of_storage = m_start + 1;
-        } else {
+        //空间扩容
+        inline void m_spaceToBig( bool is_copy = true ) {
+            if ( capacity() == 0 ) {
+                m_start = get_allocator().allocate( 1 );
+                m_finish = m_start;
+                m_end_of_storage = m_start + 1;
+            } else {
+                if ( is_copy ) {
+                    iterator tmp = m_start;
+                    size_type n = size();
+                    size_type cap = capacity();
+                    m_start = get_allocator().allocate( SCALEOUT * cap );
+                    std::uninitialized_copy_n( tmp, n, m_start );
+                    m_finish = m_start + n;
+                    m_end_of_storage = m_start + SCALEOUT * cap;
+                    m_destroy_delete( tmp, n, cap );
+                } else {
+                    size_type cap = capacity();
+                    m_destroy_delete( m_start, size(), capacity() );
+                    m_start = get_allocator().allocate( SCALEOUT * cap );
+                    m_finish = m_start;
+                    m_end_of_storage = m_finish + SCALEOUT * cap;
+                }
+            }
+        }
+        inline void _m_spaceToBig( size_type new_cap, bool is_copy = true ) {
             if ( is_copy ) {
                 iterator tmp = m_start;
                 size_type n = size();
                 size_type cap = capacity();
-                m_start = get_allocator().allocate( SCALEOUT * cap );
+                m_start = get_allocator().allocate( new_cap );
                 std::uninitialized_copy_n( tmp, n, m_start );
                 m_finish = m_start + n;
-                m_end_of_storage = m_start + SCALEOUT * cap;
+                m_end_of_storage = m_start + new_cap;
                 m_destroy_delete( tmp, n, cap );
             } else {
-                size_type cap = capacity();
+                // size_type cap = capacity();
                 m_destroy_delete( m_start, size(), capacity() );
-                m_start = get_allocator().allocate( SCALEOUT * cap );
+                m_start = get_allocator().allocate( new_cap );
                 m_finish = m_start;
-                m_end_of_storage = m_finish + SCALEOUT * cap;
+                m_end_of_storage = m_finish + new_cap;
             }
         }
-    }
-    inline void _m_spaceToBig( size_type new_cap, bool is_copy = true ) {
-        if ( is_copy ) {
-            iterator tmp = m_start;
-            size_type n = size();
-            size_type cap = capacity();
-            m_start = get_allocator().allocate( new_cap );
-            std::uninitialized_copy_n( tmp, n, m_start );
-            m_finish = m_start + n;
-            m_end_of_storage = m_start + new_cap;
-            m_destroy_delete( tmp, n, cap );
-        } else {
-            // size_type cap = capacity();
-            m_destroy_delete( m_start, size(), capacity() );
-            m_start = get_allocator().allocate( new_cap );
-            m_finish = m_start;
-            m_end_of_storage = m_finish + new_cap;
-        }
-    }
-
-    inline bool m_is_iter_range( const_iterator iter ) {
-        return ( iter >= m_start && iter <= m_finish );
-    }
 
     }; //thin_vector
 
