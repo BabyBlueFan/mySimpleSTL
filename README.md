@@ -117,26 +117,26 @@ C++ STL的学习和简单地实现
 ***
 #### 修改器
 - [x] void push_back(const T& value);// 尾部插入元素
-- [ ] void push_back(T&& value); // C++11起
+- [x] void push_back(T&& value); // C++11起
 - [x] void pop_back();// 删除尾部元素（列表为空时行为未定义）
 - [x] void push_front(const T& value);// 头部插入元素（拷贝或移动语义）
-- [ ] void push_front(T&& value); // C++11起
+- [x] void push_front(T&& value); // C++11起
 - [x] void pop_front();// 删除头部元素（列表为空时行为未定义）
 - [x] template <class... Args> void emplace_front(Args&&... args);// 在头部就地构造元素（C++11起，避免拷贝）
 - [x] template <class... Args> void emplace_back(Args&&... args);// 在尾部就地构造元素（C++11起）
-- [ ] template <class... Args> iterator emplace(const_iterator pos, Args&&... args);// 在迭代器 `pos` 前就地构造元素，返回新元素的迭代器（C++11起）
-- [ ] iterator insert(const_iterator pos, const T& value);// 在 `pos` 前插入元素，返回插入的第一个元素的迭代器
-- [ ] iterator insert(const_iterator pos, T&& value); // C++11起
-- [ ] iterator insert(const_iterator pos, size_type count, const T& value); // 插入 `count` 个 `value`
-- [ ] template <class InputIt> iterator insert(const_iterator pos, InputIt first, InputIt last);// 在 `pos` 前插入范围 `[first, last)` 的元素
-- [ ] iterator insert(const_iterator pos, std::initializer_list<T> ilist);// 插入初始化列表中的元素（C++11起）
-- [ ] iterator erase(const_iterator pos);// 删除 `pos` 处的元素，返回被删元素的下一个位置的迭代器
-- [ ] iterator erase(const_iterator first, const_iterator last);// 删除 `[first, last)` 范围的元素，返回 `last` 的迭代器
-- [ ] void swap(list& other) noexcept;// 交换两个列表的内容（O(1) 时间复杂度）
-- [ ] void clear() noexcept;// 清空列表中的所有元素
-- [ ] void assign(size_type count, const T& value);// 替换列表内容为 `count` 个 `value`
-- [ ] template <class InputIt> void assign(InputIt first, InputIt last);// 替换内容为迭代器范围 `[first, last)` 的元素
-- [ ] void assign(std::initializer_list<T> ilist);// 替换内容为初始化列表 `ilist` 中的元素（C++11起）
+- [x] template <class... Args> iterator emplace(const_iterator pos, Args&&... args);// 在迭代器 `pos` 前就地构造元素，返回新元素的迭代器（C++11起）
+- [x] iterator insert(const_iterator pos, const T& value);// 在 `pos` 前插入元素，返回插入的第一个元素的迭代器
+- [x] iterator insert(const_iterator pos, T&& value); // C++11起
+- [x] iterator insert(const_iterator pos, size_type count, const T& value); // 插入 `count` 个 `value`
+- [x] template <class InputIt> iterator insert(const_iterator pos, InputIt first, InputIt last);// 在 `pos` 前插入范围 `[first, last)` 的元素
+- [x] iterator insert(const_iterator pos, std::initializer_list<T> ilist);// 插入初始化列表中的元素（C++11起）
+- [x] iterator erase(const_iterator pos);// 删除 `pos` 处的元素，返回被删元素的下一个位置的迭代器
+- [x] iterator erase(const_iterator first, const_iterator last);// 删除 `[first, last)` 范围的元素，返回 `last` 的迭代器
+- [x] void swap(list& other) noexcept;// 交换两个列表的内容（O(1) 时间复杂度）
+- [x] void clear() noexcept;// 清空列表中的所有元素
+- [x] void assign(size_type count, const T& value);// 替换列表内容为 `count` 个 `value`
+- [x] template <class InputIt> void assign(InputIt first, InputIt last);// 替换内容为迭代器范围 `[first, last)` 的元素
+- [x] void assign(std::initializer_list<T> ilist);// 替换内容为初始化列表 `ilist` 中的元素（C++11起）
 ***
 #### 操作
 - [ ] void merge(list& other);// 合并两个有序列表：将 `other` 的元素移动到当前列表，合并后 `other` 为空// 前提：当前列表和 `other` 必须已按相同顺序排序
@@ -158,9 +158,9 @@ C++ STL的学习和简单地实现
 - [ ] template <class Compare> void sort(Compare comp);// 使用自定义比较器 `comp` 排序
 ***
 #### 赋值运算符
-- [ ] list& operator=(const list& other);// 拷贝赋值：用 `other` 的内容替换当前列表
-- [ ] list& operator=(list&& other) noexcept;// 移动赋值：将 `other` 的资源移动到当前列表（C++11起）
-- [ ] list& operator=(std::initializer_list<T> ilist);// 用初始化列表 `ilist` 的内容赋值（C++11起）
+- [x] list& operator=(const list& other);// 拷贝赋值：用 `other` 的内容替换当前列表
+- [x] list& operator=(list&& other) noexcept;// 移动赋值：将 `other` 的资源移动到当前列表（C++11起）
+- [x] list& operator=(std::initializer_list<T> ilist);// 用初始化列表 `ilist` 的内容赋值（C++11起）
 
 
 

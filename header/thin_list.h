@@ -10,6 +10,7 @@
 #include <initializer_list>
 #include <type_traits>
 #include "iterator_category_judgment.h"
+#include "thin_vector.h"
 
 namespace thinContainers {
 
@@ -313,27 +314,74 @@ namespace thinContainers {
                 push_back( *(iter++) );
             }
         }
-
+        // 拷贝赋值：用 other 的内容替换当前列表
+        thin_list& operator=( const thin_list& other ) {
+            assgin( other.begin(), other.end() );
+            return *this;
+        }
+        // 移动赋值：将 other 的资源移动到当前列表
+        thin_list& operator=( thin_list&& other ) noexcept {
+            thin_vector< iterator > tmpVce;
+            if ( 0 != m_size ) {
+                node_type* ptr = m_p_sentinel->_m_p_next;
+                iterator tmpIter = iterator(ptr);
+                while ( tmpIter != end() ) {
+                    tmpVce.push_back( tmpIter++ );
+                }
+                // tmpIter = iterator( ptr );
+                for ( auto elem : tmpVce ) {
+                    m_destroy( elem._m_p_node );
+                    m_deallocate( elem._m_p_node );
+                }
+            }
+            m_size = other.m_size; other.m_size = 0;
+            m_p_sentinel = other.m_p_sentinel; other.m_p_sentinel = nullptr;
+            return *this;
+        }
+        // 用初始化列表 `ilist` 的内容赋值（C++11起）
+        thin_list& operator=( std::initializer_list< T > lst ) {
+            assgin( lst.begin(), lst.end() );
+            return *this;
+        }
         //析构函数 
         ~thin_list() {
             // m_destroy()
-            node_type* ptr = m_p_sentinel->_m_p_next;
-            while ( ptr != m_p_sentinel ) {
-                m_destroy( ptr );
-                ptr = ptr->_m_p_next;
+            thin_vector< iterator > tmpVce;
+            if ( 0 != m_size ) {
+                node_type* ptr = m_p_sentinel->_m_p_next;
+                iterator tmpIter = iterator(ptr);
+                while ( tmpIter != end() ) {
+                    tmpVce.push_back( tmpIter++ );
+                }
+                // tmpIter = iterator( ptr );
+                for ( auto elem : tmpVce ) {
+                    m_destroy( elem._m_p_node );
+                    m_deallocate( elem._m_p_node );
+                }
             }
-            ptr = m_p_sentinel->_m_p_next;
-            // m_deallocate( ptr, m_size );
-            while ( ptr != m_p_sentinel ) {
-                m_deallocate( ptr );
-                ptr = ptr->_m_p_next;
-            }
-            m_deallocate( ptr );
+            m_deallocate( m_p_sentinel );
+            m_size = 0;
         }
         //push_back()
         void push_back( const T& elem ) {
             node_type* ptr =  m_allocate();
             m_construct( ptr, elem );
+            if ( 0 == m_size ) {
+                m_p_sentinel->_m_p_prev = ptr;
+                ptr->_m_p_next = m_p_sentinel;
+                ptr->_m_p_prev = m_p_sentinel;
+                m_p_sentinel->_m_p_next = ptr;
+            } else {
+                m_p_sentinel->_m_p_prev->_m_p_next = ptr;
+                ptr->_m_p_prev = m_p_sentinel->_m_p_prev;
+                m_p_sentinel->_m_p_prev = ptr;
+                ptr->_m_p_next = m_p_sentinel;
+            }
+            ++m_size;
+        }
+        void push_back( T&& elem ) {
+            node_type* ptr =  m_allocate();
+            m_construct( ptr, std::move( elem ) );
             if ( 0 == m_size ) {
                 m_p_sentinel->_m_p_prev = ptr;
                 ptr->_m_p_next = m_p_sentinel;
@@ -382,6 +430,22 @@ namespace thinContainers {
             }
             ++m_size;
         }
+        void push_front( T&& elem ) {
+            node_type* ptr = m_allocate();
+            m_construct( ptr, std::move( elem ) );
+            if ( 0 == m_size ) {
+                ptr->_m_p_prev = m_p_sentinel;
+                ptr->_m_p_next = m_p_sentinel;
+                m_p_sentinel->_m_p_next = ptr;
+                m_p_sentinel->_m_p_prev = ptr;
+            } else {
+                m_p_sentinel->_m_p_next->_m_p_prev = ptr;
+                ptr->_m_p_prev = m_p_sentinel;
+                ptr->_m_p_next = m_p_sentinel->_m_p_next;
+                m_p_sentinel->_m_p_next = ptr;
+            }
+            ++m_size;
+        }
         // 在头部就地构造元素（C++11起，避免拷贝）
         template < typename... Args >
         void emplace_front( Args&&... args ) {
@@ -399,6 +463,27 @@ namespace thinContainers {
                 m_p_sentinel->_m_p_next = ptr;
             }
             ++m_size;
+        }
+        // 在迭代器 `posIter` 前就地构造元素，返回新元素的迭代器（C++11起）
+        template < typename... Args >
+        iterator emplace( const_iterator posIter, Args&&...args ) {
+            //首先构造新节点
+            node_type* ptr = m_allocate();
+            m_construct( ptr, std::forward<Args>(args)... );
+
+            if ( posIter._m_p_node == m_p_sentinel && 0 == m_size ) {
+                ptr->_m_p_next = posIter._m_p_node;
+                ptr->_m_p_prev = posIter._m_p_node;
+                posIter._m_p_node->_m_p_prev = ptr;
+                posIter._m_p_node->_m_p_next = ptr;
+            } else {
+                ptr->_m_p_next = posIter._m_p_node;
+                ptr->_m_p_prev = posIter._m_p_node->_m_p_prev;
+                posIter._m_p_node->_m_p_prev->_m_p_next = ptr;
+                posIter._m_p_node->_m_p_prev = ptr;
+            }
+            ++m_size;
+            return iterator(ptr);
         }
         // 删除尾部元素（列表为空时行为未定义）
         void pop_back() {
@@ -418,6 +503,181 @@ namespace thinContainers {
             --m_size;
             m_destroy( pop_node );
             m_deallocate( pop_node ); pop_node = nullptr;
+        }
+        //在posIter 前插入元素，返回插入元素的迭代器
+        iterator insert( const_iterator posIter, const T& elem ) {
+            node_type* ptr = m_allocate();
+            m_construct( ptr, elem );
+            node_type* temp = posIter._m_p_node;
+            if ( 0 == m_size ) {
+                ptr->_m_p_next = temp;
+                ptr->_m_p_prev = temp;
+                temp->_m_p_prev = ptr;
+                temp->_m_p_next = ptr;
+            } else {
+                ptr->_m_p_next = temp;
+                ptr->_m_p_prev = temp->_m_p_prev;
+                temp->_m_p_prev->_m_p_next = ptr;
+                temp->_m_p_prev = ptr;
+            }
+            ++m_size;
+            return iterator(ptr);
+        }
+        iterator insert( const_iterator posIter, T&& elem ) {
+            node_type* ptr = m_allocate();
+            m_construct( ptr, std::move( elem ) );
+            node_type* temp = posIter._m_p_node;
+            if ( 0 == m_size ) {
+                ptr->_m_p_next = temp;
+                ptr->_m_p_prev = temp;
+                temp->_m_p_prev = ptr;
+                temp->_m_p_next = ptr;
+            } else {
+                ptr->_m_p_next = temp;
+                ptr->_m_p_prev = temp->_m_p_prev;
+                temp->_m_p_prev->_m_p_next = ptr;
+                temp->_m_p_prev = ptr;
+            }
+            ++m_size;
+            return iterator(ptr);
+        }
+        // 插入 cnt 个 elem
+        iterator insert( const_iterator posIter, size_type cnt, const T& elem ) {
+            const_iterator insertPos = posIter;
+            for ( size_type i = 0; i != cnt; ++i ) {
+                insertPos  =  insert( insertPos, elem );
+            }
+            return iterator(insertPos._m_p_node);
+        }
+        // 在 posIter  前插入范围 [first, last) 的元素
+        template < typename InputIter,
+                   typename std::enable_if< _is_input_iterator< InputIter >::value>::type* = nullptr >
+        iterator insert( const_iterator posIter, InputIter first, InputIter last ) {
+            const_iterator insertPos = posIter;
+            InputIter iter = first;
+            iterator retIter = iterator( posIter._m_p_node );
+            while ( iter != last ) {
+                if ( iter == first ) {
+                    retIter =  insert( insertPos, *( iter++ ) );
+                } else {
+                    insert( insertPos, *( iter++ ) );
+                }
+            }
+            return retIter;
+        }
+        // 插入初始化列表中的元素（C++11起）
+        iterator insert( const_iterator posIter, std::initializer_list< T > initlst ) {
+            const_iterator insertPos = posIter;
+            auto iter = initlst.begin();
+            iterator retIter = iterator( posIter._m_p_node );
+            while ( iter != initlst.end() ) {
+                if ( iter == initlst.begin() ) {
+                    retIter =  insert( insertPos, *( iter++ ) );
+                } else {
+                    insert( insertPos, *( iter++ ) );
+                }
+            }
+            return retIter;
+        }
+        // 删除 posIter  处的元素，返回被删元素的下一个位置的迭代器--m_size
+        iterator erase( const_iterator posIter ) {
+            node_type* ptr = posIter._m_p_node;
+            ptr->_m_p_prev->_m_p_next = ptr->_m_p_next;
+            ptr->_m_p_next->_m_p_prev = ptr->_m_p_prev;
+            --m_size;
+            iterator retIter = iterator( ptr->_m_p_next );
+            m_destroy( ptr );
+            m_deallocate( ptr ); ptr = nullptr;
+            return retIter;
+        }
+        // 删除 [first, last) 范围的元素，返回 last 的迭代器
+        iterator erase( const_iterator first, const_iterator last ) {
+            while ( first != last ) {
+                erase( (first++) );
+            }
+            return iterator( last._m_p_node );
+        }
+        // 交换两个列表的内容（O(1) 时间复杂度）
+        void swap( thin_list& other ) noexcept {
+            node_type* temp = m_p_sentinel;
+            m_p_sentinel = other.m_p_sentinel;
+            other.m_p_sentinel = temp;
+            size_type tmp = m_size;
+            m_size = other.m_size;
+            other.m_size = tmp;
+        }
+       // 替换列表内容为 `count` 个 `value`
+        void assgin( size_type cnt, const T& value ) {
+            if ( cnt <= m_size ) {
+                iterator iter = begin();
+                for ( size_type i = 0; i != cnt; ++i ) {
+                    *(iter++) = value;
+                }
+                erase( iter, end() );
+            } else {
+                for ( iterator iter = begin(); iter != end(); ) {
+                    *(iter++) = value;
+                }
+                while ( m_size < cnt ) {
+                    push_back( value );
+                }
+            }
+        }
+        // 替换内容为迭代器范围 `[first, last)` 的元素
+        template < typename InputIter, 
+                   typename std::enable_if< _is_input_iterator< InputIter >::value>::type* = nullptr >
+        void assgin( InputIter first, InputIter last ) {
+            if ( m_size == 0 ) {
+                while ( first != last ) {
+                    push_back( *(first++) );
+                }
+            } else {
+                iterator iter = begin();
+                while ( first != last && iter != end() ) {
+                    *(iter++) = *first++;
+                }
+                if ( first == last ) {
+                    erase( iter, end() );
+                } else {
+                    while ( first != last ) {
+                        push_back( *(first++) );
+                    }
+                }
+            }
+        }
+        // 替换内容为初始化列表 `ilist` 中的元素（C++11起）
+        void assgin( std::initializer_list< T > lst ) {
+            assgin( lst.begin(), lst.end() );
+        }
+        // 合并两个有序列表：将 other 的元素移动到当前列表，合并后 other 为空--前提：当前列表和other必须已按相同顺序排序
+        void merge( thin_list& other ) {
+            if ( other.m_size == 0) {
+            } else if ( m_size == 0 && other.m_size != 0 ) {
+                assgin( other.begin(), other.end() );
+                other.clear();
+            } else if ( m_size != 0 && other.m_size != 0 ) {
+                auto iter2 = other.begin();
+                for ( auto iter1 = begin(); iter1 != end() && iter2 != other.end(); ++iter1 ) {
+                    for ( ; iter2 != other.end(); ++iter2 ) {
+                        if ( *iter2 <= *iter1 ) {
+                            insert( iter1, *iter2 );
+                        } else {
+                            break;
+                        }
+                    }
+                }
+                other.clear();
+            }
+
+        }
+        // 使用自定义比较器 `comp` 合并两个有序列表
+        template < typename Compare >
+        void merge( thin_list& other, Compare comp ) {
+
+        }
+        // 清空列表中的所有元素
+        void clear() noexcept {
+            erase( begin(), end() );
         }
         //size()
         size_type size() const noexcept {

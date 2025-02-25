@@ -24,13 +24,16 @@ void func( thin_list< int >::const_iterator iter ) {
 }
 
 void test01( void ) {
-    thin_list< tstClass > lst;
-    lst.emplace_back( 12 );
-    lst.emplace_back( 19 );
-    for ( auto elem : lst ) {
-        std::cout << elem.m_data  << " ";
+    // thin_list< tstClass > lst = { 5, 4, 3, 99, };
+    thin_list< int > lstt;// = { 8, 10, 12, 15 };
+    thin_list< int > lst = { 1, 9, 10 };
+    lstt.merge( lst );
+    for ( auto elem : lstt ) {
+        std::cout << elem << " ";
     }
     std::cout << std::endl;
+    std::cout << "size = " << lstt.size() << std::endl;
+ 
     
 }
 
