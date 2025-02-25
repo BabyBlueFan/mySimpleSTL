@@ -268,7 +268,7 @@ namespace thinContainers {
         using allocator_type = Alloc;
         using node_type = __list_node< T >;
 
-        allocator_type get_allocator() {
+        allocator_type get_allocator() const noexcept {
             return allocator_type();
         }
 
@@ -347,9 +347,109 @@ namespace thinContainers {
             }
             ++m_size;
         }
+        // 在尾部就地构造元素（C++11起）
+        template < typename... Args >
+        void emplace_back( Args&&... args ) {
+            node_type* ptr =  m_allocate();
+            m_construct( ptr, std::forward< Args >(args)... );
+            if ( 0 == m_size ) {
+                m_p_sentinel->_m_p_prev = ptr;
+                ptr->_m_p_next = m_p_sentinel;
+                ptr->_m_p_prev = m_p_sentinel;
+                m_p_sentinel->_m_p_next = ptr;
+            } else {
+                m_p_sentinel->_m_p_prev->_m_p_next = ptr;
+                ptr->_m_p_prev = m_p_sentinel->_m_p_prev;
+                m_p_sentinel->_m_p_prev = ptr;
+                ptr->_m_p_next = m_p_sentinel;
+            }
+            ++m_size;
+        }
+        //头部插入元素
+        void push_front( const T& elem ) {
+            node_type* ptr = m_allocate();
+            m_construct( ptr, elem );
+            if ( 0 == m_size ) {
+                ptr->_m_p_prev = m_p_sentinel;
+                ptr->_m_p_next = m_p_sentinel;
+                m_p_sentinel->_m_p_next = ptr;
+                m_p_sentinel->_m_p_prev = ptr;
+            } else {
+                m_p_sentinel->_m_p_next->_m_p_prev = ptr;
+                ptr->_m_p_prev = m_p_sentinel;
+                ptr->_m_p_next = m_p_sentinel->_m_p_next;
+                m_p_sentinel->_m_p_next = ptr;
+            }
+            ++m_size;
+        }
+        // 在头部就地构造元素（C++11起，避免拷贝）
+        template < typename... Args >
+        void emplace_front( Args&&... args ) {
+            node_type* ptr = m_allocate();
+            m_construct( ptr, std::forward<Args>(args)... );
+            if ( 0 == m_size ) {
+                ptr->_m_p_prev = m_p_sentinel;
+                ptr->_m_p_next = m_p_sentinel;
+                m_p_sentinel->_m_p_next = ptr;
+                m_p_sentinel->_m_p_prev = ptr;
+            } else {
+                m_p_sentinel->_m_p_next->_m_p_prev = ptr;
+                ptr->_m_p_prev = m_p_sentinel;
+                ptr->_m_p_next = m_p_sentinel->_m_p_next;
+                m_p_sentinel->_m_p_next = ptr;
+            }
+            ++m_size;
+        }
+        // 删除尾部元素（列表为空时行为未定义）
+        void pop_back() {
+            node_type* pop_node = m_p_sentinel->_m_p_prev;
+            m_p_sentinel->_m_p_prev = pop_node->_m_p_prev;
+            pop_node->_m_p_prev->_m_p_next = m_p_sentinel;
+            m_destroy( pop_node );
+            m_deallocate( pop_node , 1 );
+            pop_node = nullptr;// pop_node->_m_p_next = nullptr; pop_node->_m_p_prev = nullptr;
+            --m_size;
+        }
+        // 删除头部元素（列表为空时行为未定义）
+        void pop_front() {
+            node_type* pop_node = m_p_sentinel->_m_p_next;
+            m_p_sentinel->_m_p_next = pop_node->_m_p_next;
+            pop_node->_m_p_next->_m_p_prev = m_p_sentinel;
+            --m_size;
+            m_destroy( pop_node );
+            m_deallocate( pop_node ); pop_node = nullptr;
+        }
         //size()
-        size_type size() const {
+        size_type size() const noexcept {
             return m_size;
+        }
+        //max_size()
+        size_type max_size() const noexcept {
+            return ( std::allocator_traits< allocator_type >::max_size( get_allocator() ) );
+        }
+        //调整大小：cnt > size()，添加默认构造的元素；否则删除多余元素
+        void resize( size_type cnt ) {
+            if ( cnt > m_size ) {
+                while ( cnt !=  m_size ) {
+                    push_back( T() );
+                }
+            } else {
+                while ( cnt != m_size ) {
+                    pop_back();
+                }
+            }
+        }
+        //调整列表大小：若 cnt > size()，添加value的副本；否则删除多余元素
+        void resize( size_type cnt, const T& value ) {
+            if ( cnt > m_size ) {
+                while ( cnt != m_size ) {
+                    push_back( value );
+                }
+            } else {
+                while ( cnt != m_size ) {
+                    pop_back();
+                }
+            }
         }
         //begin()
         iterator begin() noexcept {
@@ -405,6 +505,10 @@ namespace thinContainers {
         }
         const_reference back() const {
             return *(--cend());
+        }
+        //empry()
+        bool empty() const noexcept {
+            return ( 0 == m_size );
         }
     protected:
         //申请一个节点（__list_node< T >）的内存空间  

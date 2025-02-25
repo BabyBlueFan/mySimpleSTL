@@ -8,7 +8,7 @@
 using namespace thinContainers;
 
 class tstClass {
-private:
+public:
     int m_data;
 public:
     tstClass( int value ) : m_data( value ) {
@@ -24,25 +24,14 @@ void func( thin_list< int >::const_iterator iter ) {
 }
 
 void test01( void ) {
-    thin_list< int > lst{ 4, 5, 7, 99, 21, 90 };
-    thin_list< int > lstt(lst);
-    auto iter = lstt.rbegin();
-    for ( ; iter != lstt.rend() ; ++iter ) {
-        std::cout << *iter << " ";
+    thin_list< tstClass > lst;
+    lst.emplace_back( 12 );
+    lst.emplace_back( 19 );
+    for ( auto elem : lst ) {
+        std::cout << elem.m_data  << " ";
     }
     std::cout << std::endl;
-    // lstt.front() = 88;
-    /* lst.push_back( 8 );
-    lst.push_back( 9 ); 
-    lst.push_back( 10 ); 
-    lst.push_back( 3 ); 
-    lst.push_back( 2 ); */
-    for ( auto elem : lstt ) {
-        std::cout << elem << " ";
-    }
-    std::cout << std::endl << "size = " << lstt.size() << std::endl;
-    // thin_list< int >::const_iterator iter = lst.begin();
-    return;
+    
 }
 
 int main( void ) {
