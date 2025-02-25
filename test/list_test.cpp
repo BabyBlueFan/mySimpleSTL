@@ -19,11 +19,18 @@ public:
     }
 };
 
+void func( thin_list< int >::const_iterator iter ) {
+    std::cout << *iter << std::endl;
+}
+
 void test01( void ) {
     thin_list< int > lst{ 4, 5, 7, 99, 21, 90 };
-    thin_list< int > lstt( lst.begin(), lst.end() );
-    lstt.back() = 15;
-    lstt.front() = 15;
+    thin_list< int > lstt(lst);
+    auto iter = lstt.rbegin();
+    for ( ; iter != lstt.rend() ; ++iter ) {
+        std::cout << *iter << " ";
+    }
+    std::cout << std::endl;
     // lstt.front() = 88;
     /* lst.push_back( 8 );
     lst.push_back( 9 ); 

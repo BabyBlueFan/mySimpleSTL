@@ -99,14 +99,14 @@ C++ STL的学习和简单地实现
 - [x] const_iterator begin() const noexcept;
 - [x] iterator end() noexcept;// 返回指向尾后位置的迭代器
 - [x] const_iterator end() const noexcept;// 反向迭代器：指向反向首元素（即原列表的最后一个元素）
-- [ ] reverse_iterator rbegin() noexcept;
-- [ ] const_reverse_iterator rbegin() const noexcept;
-- [ ] reverse_iterator rend() noexcept;// 反向迭代器：指向反向尾后位置（即原列表第一个元素的前驱）
-- [ ] const_reverse_iterator rend() const noexcept;
-- [ ] const_iterator cbegin() const noexcept;// 常量迭代器版本（C++11起）
-- [ ] const_iterator cend() const noexcept;
-- [ ] const_reverse_iterator crbegin() const noexcept;
-- [ ] const_reverse_iterator crend() const noexcept;
+- [x] reverse_iterator rbegin() noexcept;
+- [x] const_reverse_iterator rbegin() const noexcept;
+- [x] reverse_iterator rend() noexcept;// 反向迭代器：指向反向尾后位置（即原列表第一个元素的前驱）
+- [x] const_reverse_iterator rend() const noexcept;
+- [x] const_iterator cbegin() const noexcept;// 常量迭代器版本（C++11起）
+- [x] const_iterator cend() const noexcept;
+- [x] const_reverse_iterator crbegin() const noexcept;
+- [x] const_reverse_iterator crend() const noexcept;
 
 
 

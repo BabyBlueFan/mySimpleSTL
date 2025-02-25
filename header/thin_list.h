@@ -25,6 +25,7 @@ namespace thinContainers {
     }; //__list_node
 
     template < typename T > class __list_const_iterator;
+    template < typename T > class __list_const_reverse_iterator;
     //记住：迭代器本质是指向元素的“指针” + 一系列的操作
     template < typename T >
     class __list_iterator {
@@ -138,11 +139,125 @@ namespace thinContainers {
         } */
     }; //__list_const_iterator
 
+    template < typename T >
+    class __list_reverse_iterator {
+    public:
+        using iterator_category = std::bidirectional_iterator_tag; //支持++ -- == !=
+        using value_type =  T;
+        using reference = T&;
+        using pointer = T*;
+        using difference_type = ptrdiff_t;
+    private:
+        __list_node< T >* _m_p_node;//数据成员
+        //声明thin_list 是__list_node的友元可以访问其私有成员
+        template < typename U,typename Alloc > friend class thin_list;
+    public:
+        //构造函数  
+        __list_reverse_iterator(__list_node<T>* node = nullptr) : _m_p_node(node) {}
+
+        reference operator*() const {
+            return _m_p_node->_m_data;
+        }
+        pointer operator->() const {
+            return &(_m_p_node->_m_data);
+        }
+        //--操作
+        __list_reverse_iterator& operator--() {
+            _m_p_node = _m_p_node->_m_p_next;
+            return *this;
+        }
+        __list_reverse_iterator operator--( int ) {
+            __list_reverse_iterator temp = *this;
+            _m_p_node = _m_p_node->_m_p_next;
+            return temp;
+        }
+        //++操作
+        __list_reverse_iterator& operator++() {
+            _m_p_node = _m_p_node->_m_p_prev;
+            return *this;
+        }
+        __list_reverse_iterator operator++(int) {
+            __list_reverse_iterator temp = *this;
+            _m_p_node = _m_p_node->_m_p_prev;
+            return temp;
+        }
+        //== != 操作
+        bool operator==( const __list_reverse_iterator& other ) const {
+            return _m_p_node == other._m_p_node;
+        }
+        bool operator!=( const __list_reverse_iterator& other ) const {
+            return _m_p_node != other._m_p_node;
+        }
+        //允许从非const迭代器转换成const迭代器
+        operator __list_const_reverse_iterator< T >() const {
+            return __list_const_reverse_iterator< T >( _m_p_node  );
+        }
+
+    }; //__list_reverse_iterator
+
+    template < typename T >
+    class __list_const_reverse_iterator {
+    public:
+        using iterator_category = std::bidirectional_iterator_tag; //支持++ -- == !=
+        using value_type =  const T;
+        using reference = const T&;
+        using pointer = const T*;
+        using difference_type = ptrdiff_t;
+    private:
+        __list_node< T >* _m_p_node;//数据成员
+        //声明thin_list 是__list_node的友元可以访问其私有成员
+        template < typename U,typename Alloc > friend class thin_list;
+    public:
+        //构造函数  
+        __list_const_reverse_iterator(__list_node<T>* node = nullptr) : _m_p_node(node) {}
+
+        reference operator*() const {
+            return _m_p_node->_m_data;
+        }
+        pointer operator->() const {
+            return &(_m_p_node->_m_data);
+        }
+        //--操作
+        __list_const_reverse_iterator& operator--() {
+            _m_p_node = _m_p_node->_m_p_next;
+            return *this;
+        }
+        __list_const_reverse_iterator operator--( int ) {
+            __list_const_reverse_iterator temp = *this;
+            _m_p_node = _m_p_node->_m_p_next;
+            return temp;
+        }
+        //++操作
+        __list_const_reverse_iterator& operator++() {
+            _m_p_node = _m_p_node->_m_p_prev;
+            return *this;
+        }
+        __list_const_reverse_iterator operator++(int) {
+            __list_const_reverse_iterator temp = *this;
+            _m_p_node = _m_p_node->_m_p_prev;
+            return temp;
+        }
+        //== != 操作
+        bool operator==( const __list_const_reverse_iterator& other ) const {
+            return _m_p_node == other._m_p_node;
+        }
+        bool operator!=( const __list_const_reverse_iterator& other ) const {
+            return _m_p_node != other._m_p_node;
+        }
+        //允许从非const迭代器转换成const迭代器
+        /* operator __list_const_iterator< T >() const {
+            return __list_const_iterator< T >( _m_p_node  );
+        } */
+
+    }; //__list_const_reverse_iterator
+
     template < typename T, typename Alloc = std::allocator< __list_node< T > > > 
     class thin_list {
     public:
         using iterator = __list_iterator< T >;
         using const_iterator = __list_const_iterator< T >;
+        using reverse_iterator = __list_reverse_iterator< T >;
+        using const_reverse_iterator = __list_const_reverse_iterator< T >;
         using value_type = T;
         using pointer = T*;
         using const_pointer = const T*;
@@ -246,6 +361,16 @@ namespace thinContainers {
         const_iterator cbegin() const noexcept {
             return const_iterator( m_p_sentinel->_m_p_next );
         }
+        //rbegin()
+        reverse_iterator rbegin() noexcept {
+            return reverse_iterator(m_p_sentinel->_m_p_prev);
+        }
+        const_reverse_iterator rbegin() const noexcept {
+            return const_reverse_iterator( m_p_sentinel->_m_p_prev );
+        }
+        const_reverse_iterator crbegin() const noexcept {
+            return const_reverse_iterator( m_p_sentinel->_m_p_prev );
+        }
         //end()
         iterator end() noexcept {
             return iterator( m_p_sentinel );
@@ -255,6 +380,16 @@ namespace thinContainers {
         }
         const_iterator cend() const noexcept {
             return const_iterator( m_p_sentinel );
+        }
+        //rend()
+        reverse_iterator rend() noexcept {
+            return reverse_iterator( m_p_sentinel );
+        }
+        const_reverse_iterator rend() const noexcept {
+            return const_reverse_iterator( m_p_sentinel );
+        }
+        const_reverse_iterator crend() const noexcept {
+            return const_reverse_iterator( m_p_sentinel );
         }
         //front()返回首元素的引用（列表为空时行为未定义）
         reference front() {
