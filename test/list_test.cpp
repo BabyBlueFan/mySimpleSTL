@@ -4,11 +4,12 @@
 #include <iostream>
 #include <algorithm>
 #include <list>
+#include <functional>
 
 using namespace thinContainers;
 
 class tstClass {
-private:
+public:
     int m_data;
 public:
     tstClass( int value ) : m_data( value ) {
@@ -23,26 +24,28 @@ void func( thin_list< int >::const_iterator iter ) {
     std::cout << *iter << std::endl;
 }
 
+bool myComp( int a, int b ) {
+    return a > b;
+}
+
 void test01( void ) {
-    thin_list< int > lst{ 4, 5, 7, 99, 21, 90 };
-    thin_list< int > lstt(lst);
-    auto iter = lstt.rbegin();
-    for ( ; iter != lstt.rend() ; ++iter ) {
-        std::cout << *iter << " ";
-    }
-    std::cout << std::endl;
-    // lstt.front() = 88;
-    /* lst.push_back( 8 );
-    lst.push_back( 9 ); 
-    lst.push_back( 10 ); 
-    lst.push_back( 3 ); 
-    lst.push_back( 2 ); */
-    for ( auto elem : lstt ) {
+    // thin_list< tstClass > lst = { 5, 4, 3, 99, };
+    thin_list< int > lst1 = { };
+    thin_list< int > lst2;// = {  100,10, 12, 48, 15, 1, 3  };
+    // lst1.splice(lst1.end(), lst2, ++lst2.begin(), --lst2.end() );
+    // lst1.remove( 9 );
+    lst1.unique();
+    // lst1.remove_if( std::bind( myComp, std::placeholders::_1, 8 ) );
+    for ( auto elem : lst1 ) {
         std::cout << elem << " ";
     }
-    std::cout << std::endl << "size = " << lstt.size() << std::endl;
-    // thin_list< int >::const_iterator iter = lst.begin();
-    return;
+    std::cout << std::endl;
+    std::cout << "size = " << lst1.size() << std::endl;
+    for ( auto elem : lst2 ) {
+        std::cout << elem << " ";
+    }
+    std::cout << std::endl;
+    std::cout << "size = " << lst2.size() << std::endl;
 }
 
 int main( void ) {

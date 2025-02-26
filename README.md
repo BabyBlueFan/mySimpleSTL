@@ -107,9 +107,60 @@ C++ STL的学习和简单地实现
 - [x] const_iterator cend() const noexcept;
 - [x] const_reverse_iterator crbegin() const noexcept;
 - [x] const_reverse_iterator crend() const noexcept;
-
-
-
+***
+#### 容量
+- [x] bool empty() const noexcept; //检查列表是否为空
+- [x] size_type size() const noexcept;// 返回当前元素数量（时间复杂度 O(n)，C++11 前可能为 O(1)）
+- [x] size_type max_size() const noexcept;// 返回列表可容纳的最大元素数量（与系统或实现相关）
+- [x] void resize(size_type count);// 调整列表大小：若 `count > size()`，添加默认构造的元素；否则删除多余元素
+- [x] void resize(size_type count, const T& value);// 调整列表大小：若 `count > size()`，添加 `value` 的副本；否则删除多余元素
+***
+#### 修改器
+- [x] void push_back(const T& value);// 尾部插入元素
+- [x] void push_back(T&& value); // C++11起
+- [x] void pop_back();// 删除尾部元素（列表为空时行为未定义）
+- [x] void push_front(const T& value);// 头部插入元素（拷贝或移动语义）
+- [x] void push_front(T&& value); // C++11起
+- [x] void pop_front();// 删除头部元素（列表为空时行为未定义）
+- [x] template <class... Args> void emplace_front(Args&&... args);// 在头部就地构造元素（C++11起，避免拷贝）
+- [x] template <class... Args> void emplace_back(Args&&... args);// 在尾部就地构造元素（C++11起）
+- [x] template <class... Args> iterator emplace(const_iterator pos, Args&&... args);// 在迭代器 `pos` 前就地构造元素，返回新元素的迭代器（C++11起）
+- [x] iterator insert(const_iterator pos, const T& value);// 在 `pos` 前插入元素，返回插入的第一个元素的迭代器
+- [x] iterator insert(const_iterator pos, T&& value); // C++11起
+- [x] iterator insert(const_iterator pos, size_type count, const T& value); // 插入 `count` 个 `value`
+- [x] template <class InputIt> iterator insert(const_iterator pos, InputIt first, InputIt last);// 在 `pos` 前插入范围 `[first, last)` 的元素
+- [x] iterator insert(const_iterator pos, std::initializer_list<T> ilist);// 插入初始化列表中的元素（C++11起）
+- [x] iterator erase(const_iterator pos);// 删除 `pos` 处的元素，返回被删元素的下一个位置的迭代器
+- [x] iterator erase(const_iterator first, const_iterator last);// 删除 `[first, last)` 范围的元素，返回 `last` 的迭代器
+- [x] void swap(list& other) noexcept;// 交换两个列表的内容（O(1) 时间复杂度）
+- [x] void clear() noexcept;// 清空列表中的所有元素
+- [x] void assign(size_type count, const T& value);// 替换列表内容为 `count` 个 `value`
+- [x] template <class InputIt> void assign(InputIt first, InputIt last);// 替换内容为迭代器范围 `[first, last)` 的元素
+- [x] void assign(std::initializer_list<T> ilist);// 替换内容为初始化列表 `ilist` 中的元素（C++11起）
+***
+#### 操作
+- [x] void merge(list& other);// 合并两个有序列表：将 `other` 的元素移动到当前列表，合并后 `other` 为空// 前提：当前列表和 `other` 必须已按相同顺序排序
+- [ ] void merge(list&& other); // C++11起
+- [x] template <class Compare> void merge(list& other, Compare comp);// 使用自定义比较器 `comp` 合并两个有序列表
+- [ ] template <class Compare> void merge(list&& other, Compare comp); // C++11起
+- [x] void splice(const_iterator pos, list& other);// 将 `other` 的所有元素移动到当前列表的 `pos` 前（`other` 必须与当前列表不同）
+- [ ] void splice(const_iterator pos, list&& other); // C++11起
+- [x] void splice(const_iterator pos, list& other, const_iterator it);// 将 `other` 中 `it` 指向的元素移动到当前列表的 `pos` 前
+- [ ] void splice(const_iterator pos, list&& other, const_iterator it); // C++11起
+- [x] void splice(const_iterator pos, list& other, const_iterator first, const_iterator last);// 将 `other` 中 `[first, last)` 范围的元素移动到当前列表的 `pos` 前
+- [ ] void splice(const_iterator pos, list&& other, const_iterator first, const_iterator last); // C++11起
+- [x] void remove(const T& value);// 删除所有值等于 `value` 的元素
+- [x] template <class UnaryPredicate> void remove_if(UnaryPredicate p);// 删除所有满足谓词 `p` 的元素（`p(element)` 返回 `true` 时删除）
+- [x] void reverse() noexcept;// 反转列表元素的顺序（O(n) 时间复杂度）
+- [x] void unique();// 删除连续重复元素（保留第一个）
+- [x] template <class BinaryPredicate> void unique(BinaryPredicate p);// 使用二元谓词 `p` 判断是否重复（例如自定义相等条件）
+- [ ] void sort();// 对列表元素进行升序排序（默认使用 `<` 运算符）
+- [ ] template <class Compare> void sort(Compare comp);// 使用自定义比较器 `comp` 排序
+***
+#### 赋值运算符
+- [x] list& operator=(const list& other);// 拷贝赋值：用 `other` 的内容替换当前列表
+- [x] list& operator=(list&& other) noexcept;// 移动赋值：将 `other` 的资源移动到当前列表（C++11起）
+- [x] list& operator=(std::initializer_list<T> ilist);// 用初始化列表 `ilist` 的内容赋值（C++11起）
 
 
 
