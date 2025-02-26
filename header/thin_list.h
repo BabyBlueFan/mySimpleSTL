@@ -279,7 +279,10 @@ namespace thinContainers {
 
     public:
         //默认构造函数
-        thin_list() : m_p_sentinel( m_allocate() ), m_size( 0 ) {}
+        thin_list() : m_p_sentinel( m_allocate() ), m_size( 0 ) {
+            m_p_sentinel->_m_p_next = m_p_sentinel;
+            m_p_sentinel->_m_p_prev = m_p_sentinel;
+        }
         //拷贝构造函数
         thin_list( const  thin_list& other ) : m_p_sentinel( m_allocate() ), m_size( 0 ) {
             for ( auto& elem : other ) {
@@ -656,15 +659,21 @@ namespace thinContainers {
                 assgin( other.begin(), other.end() );
                 other.clear();
             } else if ( m_size != 0 && other.m_size != 0 ) {
-                auto iter2 = other.begin();
-                for ( auto iter1 = begin(); iter1 != end() && iter2 != other.end(); ++iter1 ) {
-                    for ( ; iter2 != other.end(); ++iter2 ) {
-                        if ( *iter2 <= *iter1 ) {
-                            insert( iter1, *iter2 );
-                        } else {
+                auto iter = begin();
+                auto otherIter = other.begin();
+                for ( ; otherIter != other.end(); ++otherIter ) {
+                    for ( ; iter != end(); ++iter ) {
+                        if ( *otherIter <= *iter ) {
+                            insert( iter, *otherIter );
                             break;
-                        }
+                        } 
                     }
+                    if ( iter == end() ) {
+                        break;
+                    }
+                }
+                while( otherIter != other.end() ) {
+                    push_back( *(otherIter++) );
                 }
                 other.clear();
             }
@@ -673,7 +682,167 @@ namespace thinContainers {
         // 使用自定义比较器 `comp` 合并两个有序列表
         template < typename Compare >
         void merge( thin_list& other, Compare comp ) {
-
+            if ( other.m_size == 0) {
+            } else if ( m_size == 0 && other.m_size != 0 ) {
+                assgin( other.begin(), other.end() );
+                other.clear();
+            } else if ( m_size != 0 && other.m_size != 0 ) {
+                auto iter = begin();
+                auto otherIter = other.begin();
+                for ( ; otherIter != other.end(); ++otherIter ) {
+                    for ( ; iter != end(); ++iter ) {
+                        if ( comp( *otherIter, *iter ) ) {  //*otherIter <= *iter
+                            insert( iter, *otherIter );
+                            break;
+                        } 
+                    }
+                    if ( iter == end() ) {
+                        break;
+                    }
+                }
+                while( otherIter != other.end() ) {
+                    push_back( *(otherIter++) );
+                }
+                other.clear();
+            }
+        }
+        // 将 other 的所有元素移动到当前列表的 posIter 前（other 必须与当前列表不同）
+        void splice( const_iterator posIter, thin_list& other ) {
+            if ( other.m_size != 0 ) {
+                if ( m_size != 0 ) {
+                    other.m_p_sentinel->_m_p_next->_m_p_prev = posIter._m_p_node->_m_p_prev;
+                    posIter._m_p_node->_m_p_prev->_m_p_next = other.m_p_sentinel->_m_p_next;
+                    posIter._m_p_node->_m_p_prev = other.m_p_sentinel->_m_p_prev;
+                    other.m_p_sentinel->_m_p_prev->_m_p_next = posIter._m_p_node;
+                } else {
+                    other.m_p_sentinel->_m_p_next->_m_p_prev = m_p_sentinel;
+                    m_p_sentinel->_m_p_next = other.m_p_sentinel->_m_p_next;
+                    m_p_sentinel->_m_p_prev = other.m_p_sentinel->_m_p_prev;
+                    other.m_p_sentinel->_m_p_prev->_m_p_next = m_p_sentinel;
+                }
+                other.m_p_sentinel->_m_p_next = other.m_p_sentinel;
+                other.m_p_sentinel->_m_p_prev = other.m_p_sentinel;
+                m_size += other.m_size;
+                other.m_size = 0;
+            }
+            
+        }
+        // 将 other 中 it 指向的元素移动到当前列表的 posIter 前
+        void splice( const_iterator posIter, thin_list& other, const_iterator iter ) {
+            //将other中移动节点“摘出“来
+            iter._m_p_node->_m_p_prev->_m_p_next = iter._m_p_node->_m_p_next;
+            iter._m_p_node->_m_p_next->_m_p_prev = iter._m_p_node->_m_p_prev;
+            other.m_size -= 1;
+            //放入指定位置
+            if ( m_size != 0 ) {
+                iter._m_p_node->_m_p_prev = posIter._m_p_node->_m_p_prev;
+                iter._m_p_node->_m_p_next = posIter._m_p_node;
+                posIter._m_p_node->_m_p_prev->_m_p_next = iter._m_p_node;
+                posIter._m_p_node->_m_p_prev = iter._m_p_node;
+            } else {
+                iter._m_p_node->_m_p_next = posIter._m_p_node;
+                iter._m_p_node->_m_p_prev = posIter._m_p_node;
+                posIter._m_p_node->_m_p_next = iter._m_p_node;
+                posIter._m_p_node->_m_p_prev = iter._m_p_node;
+            }
+            m_size += 1;
+        }
+        // 将 other 中 [first, last) 范围的元素移动到当前列表的 posIter 前
+        void splice( const_iterator posIter, thin_list& other, const_iterator first, const_iterator last ) {
+            size_type cnt = 0;
+            auto tmp = first;
+            while ( tmp != last ) {
+                ++cnt; ++tmp;
+            }
+            if ( m_size == 0 ) {
+                posIter._m_p_node->_m_p_next = first._m_p_node;
+                posIter._m_p_node->_m_p_prev = last._m_p_node->_m_p_prev;
+                first._m_p_node->_m_p_prev->_m_p_next = last._m_p_node;
+                last._m_p_node->_m_p_prev->_m_p_next = posIter._m_p_node;
+                last._m_p_node->_m_p_prev = first._m_p_node->_m_p_prev;
+                first._m_p_node->_m_p_prev = posIter._m_p_node;
+            } else {
+                first._m_p_node->_m_p_prev->_m_p_next = last._m_p_node;
+                node_type* temp = last._m_p_node->_m_p_prev;
+                last._m_p_node->_m_p_prev = first._m_p_node->_m_p_prev;
+                posIter._m_p_node->_m_p_prev->_m_p_next = first._m_p_node;
+                first._m_p_node->_m_p_prev = posIter._m_p_node->_m_p_prev;
+                temp->_m_p_next = posIter._m_p_node;
+                posIter._m_p_node->_m_p_prev = temp;
+            }
+            m_size += cnt;
+            other.m_size -= cnt;
+        }
+        // 删除所有值等于 `value` 的元素
+        void remove(const T& value) {
+            if ( m_size != 0 ) {
+                for ( auto iter = begin(); iter != end(); ) {
+                    if ( *iter == value ) {
+                        iter =  erase( iter );
+                    } else {
+                        ++iter;
+                    }
+                }
+            }
+        }
+        // 删除所有满足谓词 pred 的元素（`pred(element)` 返回 `true` 时删除）
+        template < typename Predicate > 
+        void remove_if( Predicate pred ) {
+            if ( m_size != 0 ) {
+                for ( auto iter = begin(); iter != end(); ) {
+                    if ( pred( *iter ) ) {
+                       iter =  erase( iter );
+                    } else {
+                        ++iter;
+                    }
+                }
+            }
+        }
+        // 反转列表元素的顺序（O(n) 时间复杂度）
+        void reverse() noexcept {
+            iterator currIter = begin();
+            size_type cnt = 0;
+            while ( cnt != m_size + 1) {
+                node_type* temp = currIter._m_p_node->_m_p_next;
+                currIter._m_p_node->_m_p_next = currIter._m_p_node->_m_p_prev;
+                currIter._m_p_node->_m_p_prev = temp;
+                currIter = iterator(temp);
+                ++cnt;
+            }
+        }
+        // 删除连续重复元素（保留第一个）
+        void unique() {
+            T temp = *( begin() );
+            for ( iterator iter = ++begin(); iter != end(); ) {
+                if( temp == *iter ) {
+                    iter = erase( iter );
+                } else {
+                    temp = *iter;
+                    ++iter;
+                }
+            }
+        }
+        // 使用二元谓词 `pred` 判断是否重复（例如自定义相等条件）
+        template < typename BinaryPredicate >
+        void unique( BinaryPredicate pred ) {
+            T temp = *( begin() );
+            for ( iterator iter = ++begin(); iter != end(); ) {
+                if( pred( temp, *iter ) ) { //(temp == *iter)
+                    iter = erase( iter );
+                } else {
+                    temp = *iter;
+                    ++iter;
+                }
+            }
+        }
+        // 对列表元素进行升序排序（默认使用 `<` 运算符）
+        void sort() {
+            
+        }
+        // 使用自定义比较器 `comp` 排序
+        template < typename  Compare > 
+        void sort( Compare comp ) {
+            
         }
         // 清空列表中的所有元素
         void clear() noexcept {
@@ -788,6 +957,7 @@ namespace thinContainers {
         inline void m_destroy( node_type* ptr ) {
             get_allocator().destroy( ptr );
         }
+      
     }; //thin_list
 
 } //thinContainers

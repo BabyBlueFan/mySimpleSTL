@@ -139,21 +139,21 @@ C++ STL的学习和简单地实现
 - [x] void assign(std::initializer_list<T> ilist);// 替换内容为初始化列表 `ilist` 中的元素（C++11起）
 ***
 #### 操作
-- [ ] void merge(list& other);// 合并两个有序列表：将 `other` 的元素移动到当前列表，合并后 `other` 为空// 前提：当前列表和 `other` 必须已按相同顺序排序
+- [x] void merge(list& other);// 合并两个有序列表：将 `other` 的元素移动到当前列表，合并后 `other` 为空// 前提：当前列表和 `other` 必须已按相同顺序排序
 - [ ] void merge(list&& other); // C++11起
-- [ ] template <class Compare> void merge(list& other, Compare comp);// 使用自定义比较器 `comp` 合并两个有序列表
+- [x] template <class Compare> void merge(list& other, Compare comp);// 使用自定义比较器 `comp` 合并两个有序列表
 - [ ] template <class Compare> void merge(list&& other, Compare comp); // C++11起
-- [ ] void splice(const_iterator pos, list& other);// 将 `other` 的所有元素移动到当前列表的 `pos` 前（`other` 必须与当前列表不同）
+- [x] void splice(const_iterator pos, list& other);// 将 `other` 的所有元素移动到当前列表的 `pos` 前（`other` 必须与当前列表不同）
 - [ ] void splice(const_iterator pos, list&& other); // C++11起
-- [ ] void splice(const_iterator pos, list& other, const_iterator it);// 将 `other` 中 `it` 指向的元素移动到当前列表的 `pos` 前
+- [x] void splice(const_iterator pos, list& other, const_iterator it);// 将 `other` 中 `it` 指向的元素移动到当前列表的 `pos` 前
 - [ ] void splice(const_iterator pos, list&& other, const_iterator it); // C++11起
-- [ ] void splice(const_iterator pos, list& other, const_iterator first, const_iterator last);// 将 `other` 中 `[first, last)` 范围的元素移动到当前列表的 `pos` 前
+- [x] void splice(const_iterator pos, list& other, const_iterator first, const_iterator last);// 将 `other` 中 `[first, last)` 范围的元素移动到当前列表的 `pos` 前
 - [ ] void splice(const_iterator pos, list&& other, const_iterator first, const_iterator last); // C++11起
-- [ ] void remove(const T& value);// 删除所有值等于 `value` 的元素
-- [ ] template <class UnaryPredicate> void remove_if(UnaryPredicate p);// 删除所有满足谓词 `p` 的元素（`p(element)` 返回 `true` 时删除）
-- [ ] void reverse() noexcept;// 反转列表元素的顺序（O(n) 时间复杂度）
-- [ ] void unique();// 删除连续重复元素（保留第一个）
-- [ ] template <class BinaryPredicate> void unique(BinaryPredicate p);// 使用二元谓词 `p` 判断是否重复（例如自定义相等条件）
+- [x] void remove(const T& value);// 删除所有值等于 `value` 的元素
+- [x] template <class UnaryPredicate> void remove_if(UnaryPredicate p);// 删除所有满足谓词 `p` 的元素（`p(element)` 返回 `true` 时删除）
+- [x] void reverse() noexcept;// 反转列表元素的顺序（O(n) 时间复杂度）
+- [x] void unique();// 删除连续重复元素（保留第一个）
+- [x] template <class BinaryPredicate> void unique(BinaryPredicate p);// 使用二元谓词 `p` 判断是否重复（例如自定义相等条件）
 - [ ] void sort();// 对列表元素进行升序排序（默认使用 `<` 运算符）
 - [ ] template <class Compare> void sort(Compare comp);// 使用自定义比较器 `comp` 排序
 ***
