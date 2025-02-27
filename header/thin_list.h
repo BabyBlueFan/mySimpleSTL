@@ -837,12 +837,60 @@ namespace thinContainers {
         }
         // 对列表元素进行升序排序（默认使用 `<` 运算符）
         void sort() {
-            
+            size_type block_size = 1;
+            iterator left_head = begin();
+            iterator left_tail;
+            iterator right_head;
+            iterator right_tail;
+            while ( block_size < m_size ) {
+                while (left_head != end() ) {
+                    left_tail = m_get_tail( left_head, block_size );
+                    if ( left_tail != end() ) {
+                        right_head = left_tail;
+                        right_tail = m_get_tail( right_head, block_size );
+                    } else {
+                        right_head = end();
+                        right_tail = end();
+                    }
+                    if ( right_head != end() ) {
+                        m_merge( left_head, left_tail, right_head, right_tail, std::less< T >() );
+                    }
+                    // left_head = m_get_tail( left_head, 2 * block_size );
+                    left_head = right_tail;
+                }
+                left_head = begin();
+                block_size *= 2;
+                
+            }
         }
         // 使用自定义比较器 `comp` 排序
-        template < typename  Compare > 
-        void sort( Compare comp ) {
-            
+        template < typename Compare > 
+        void sort(Compare comp) {
+            size_type block_size = 1;
+            iterator left_head = begin();
+            iterator left_tail;
+            iterator right_head;
+            iterator right_tail;
+            while ( block_size < m_size ) {
+                while (left_head != end() ) {
+                    left_tail = m_get_tail( left_head, block_size );
+                    if ( left_tail != end() ) {
+                        right_head = left_tail;
+                        right_tail = m_get_tail( right_head, block_size );
+                    } else {
+                        right_head = end();
+                        right_tail = end();
+                    }
+                    if ( right_head != end() ) {
+                        m_merge( left_head, left_tail, right_head, right_tail, comp );
+                    }
+                    // left_head = m_get_tail( left_head, 2 * block_size );
+                    left_head = right_tail;
+                }
+                left_head = begin();
+                block_size *= 2;
+                
+            }
         }
         // 清空列表中的所有元素
         void clear() noexcept {
@@ -956,6 +1004,52 @@ namespace thinContainers {
         //析构一个节点
         inline void m_destroy( node_type* ptr ) {
             get_allocator().destroy( ptr );
+        }
+        inline iterator m_get_tail( iterator head, size_type n ) {
+            if ( head != end() ) {
+                for ( size_type i = 0; i != n; ++i ) {
+                    ++head;
+                    if ( head == end() ) {
+                        break;
+                    }
+                }
+            }
+            
+            return head;
+        }
+        template < typename Compare >
+        void m_merge ( iterator first1, iterator last1, iterator first2, iterator last2, 
+                       Compare cmp ) {
+            for ( ; first2 != last2; ) {
+                for ( ; first1 != last1; ) {
+                    if ( cmp( *first2, *first1 ) ) { //*first2 < *first1
+                        last1 = iterator(last1._m_p_node->_m_p_next);
+                        m_transfer( first1, first2 );
+                        first2 = last1;
+                        break;
+                    } else {
+                        ++first1;
+                    }
+                }
+                if ( first1 == last1 ) {
+                    break;
+                }
+            }
+            if ( first2 != last2 ) {
+                /* nothing?? */
+            }
+        }
+        inline void m_transfer( iterator posIter, iterator iter ) {
+            if ( posIter == iter ) {
+                return;
+            }
+            iterator temp = iter._m_p_node->_m_p_prev;
+            posIter._m_p_node->_m_p_prev->_m_p_next = iter._m_p_node;
+            iter._m_p_node->_m_p_prev = posIter._m_p_node->_m_p_prev;
+            temp._m_p_node->_m_p_next = iter._m_p_node->_m_p_next;
+            iter._m_p_node->_m_p_next = posIter._m_p_node;
+            posIter._m_p_node->_m_p_prev = iter._m_p_node;
+            temp._m_p_node->_m_p_next->_m_p_prev = temp._m_p_node;
         }
       
     }; //thin_list

@@ -154,8 +154,8 @@ C++ STL的学习和简单地实现
 - [x] void reverse() noexcept;// 反转列表元素的顺序（O(n) 时间复杂度）
 - [x] void unique();// 删除连续重复元素（保留第一个）
 - [x] template <class BinaryPredicate> void unique(BinaryPredicate p);// 使用二元谓词 `p` 判断是否重复（例如自定义相等条件）
-- [ ] void sort();// 对列表元素进行升序排序（默认使用 `<` 运算符）
-- [ ] template <class Compare> void sort(Compare comp);// 使用自定义比较器 `comp` 排序
+- [x] void sort();// 对列表元素进行升序排序（默认使用 `<` 运算符）
+- [x] template <class Compare> void sort(Compare comp);// 使用自定义比较器 `comp` 排序
 ***
 #### 赋值运算符
 - [x] list& operator=(const list& other);// 拷贝赋值：用 `other` 的内容替换当前列表
