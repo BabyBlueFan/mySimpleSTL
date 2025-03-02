@@ -248,6 +248,7 @@ namespace thinContainers {
         bool empty() const {
             return m_beg == m_end;
         }
+        //push_back()
         void push_back( const T& value ) {
             // ++m_end.m_cur;
             pointer temp = m_end.m_cur;
@@ -255,7 +256,7 @@ namespace thinContainers {
                 m_construct( m_end.m_cur, value );
                 //**一定条件下换中控区
                 if ( m_map + m_map_size - 1 == m_end.m_node ) {
-                    reserve_map_at_back();
+                    __reserve_map_at_back();
                 } 
                 pointer new_buffer =  m_allocate( m_get_buffer_size() );
                 *(m_end.m_node + 1) = new_buffer;
@@ -266,10 +267,11 @@ namespace thinContainers {
                 ++m_end;
             }
         }
+        //push_front()
         void push_front( const T& value ) {
             if ( m_beg.m_cur == m_beg.m_first ) {
                 if ( m_beg.m_node ==  m_map ) { //需要分配空间
-                    reserve_map_at_front();
+                    __reserve_map_at_front();
                 }
                 pointer new_buffer = m_allocate( m_get_buffer_size() );
                 *(m_beg.m_node - 1) = new_buffer;
@@ -280,17 +282,34 @@ namespace thinContainers {
                 m_construct( --m_beg.m_cur, value );
             }
         }
+        //pop_back()
+        void pop_back() {
+            if ( m_beg == m_end ) {
+                return;
+            }
+            if ( m_end.m_cur == m_end.m_first ) {
+                pointer* mapNode = m_end.m_node;
+                //迭代器m_end换区了-->需要释放缓冲区
+                m_destroy( (--m_end).m_cur );
+                m_deallocate( *(mapNode), m_get_buffer_size() );
+            } else {
+                m_destroy( (--m_end).m_cur );
+            }
+        }
+        //pop_front()
+
+        //clear()用来清除整个deque，回归到最初状态（无任何元素）。但是保有一个缓冲区
     protected:
         //缓冲区的大小计算
         static size_t m_get_buffer_size() {
             return  __deque_buf_size( BufSiz, sizeof(T) );
         } 
         //申请map空间
-        pointer* map_allocate( size_type n ) {
+        pointer* m_map_allocate( size_type n ) {
             return std::allocator< pointer >().allocate( n );
         }
-        void reserve_map_at_back( size_type node_to_add = 1 ) {
-            pointer* tmp =  map_allocate( m_map_size + node_to_add ); //分配新的map内存空间
+        void __reserve_map_at_back( size_type node_to_add = 1 ) {
+            pointer* tmp =  m_map_allocate( m_map_size + node_to_add ); //分配新的map内存空间
             std::uninitialized_copy_n( m_map, m_map_size, tmp ); //将旧的map内存空间拷贝之新的map内存空间
             m_beg.m_set_node( (m_beg.m_node - m_map) + tmp );
             m_beg.m_cur = m_beg.m_first;
@@ -300,8 +319,8 @@ namespace thinContainers {
             m_map = tmp;
             m_map_size = m_map_size + node_to_add;
         }
-        void reserve_map_at_front( size_type node_to_add = 1 ) {
-            pointer* tmp =  map_allocate( m_map_size + node_to_add ); //分配新的map内存空间
+        void __reserve_map_at_front( size_type node_to_add = 1 ) {
+            pointer* tmp = m_map_allocate( m_map_size + node_to_add ); //分配新的map内存空间
             std::uninitialized_copy_n( m_map, m_map_size, tmp + node_to_add ); //将旧的map内存空间拷贝之新的map内存空间
             m_beg.m_set_node( tmp + node_to_add );
             m_beg.m_cur = m_beg.m_first;
@@ -316,7 +335,7 @@ namespace thinContainers {
         void m_create_map_and_nodes( size_type elem_num ) {
             size_type node_num = elem_num / m_get_buffer_size() + 1;
             m_map_size = MAP_MIN_SIZE > ( node_num + 2 ) ? MAP_MIN_SIZE : (node_num + 2);
-            m_map =  map_allocate( m_map_size );
+            m_map =  m_map_allocate( m_map_size );
             pointer* nstart = m_map + ( m_map_size - node_num ) / 2; //已使用第一块缓冲区的地址
             pointer* nfinish = nstart + node_num - 1; //已使用最后一块缓冲区的地址
             //配置缓冲区
