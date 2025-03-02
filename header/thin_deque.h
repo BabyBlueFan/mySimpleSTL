@@ -28,23 +28,39 @@ namespace thinContainers {
         using reference = T&;
         using pointer = T*;
         using difference_type = ptrdiff_t;
+        using const_reference = const T&;
+        using const_pointer = const T*;
         template < typename U, typename Alloc, size_t _BufSiz > friend class thin_deque; 
-
+        template < typename U, size_t _BufSiz > friend class __deque_iterator;
     private: //数据成员 
         pointer m_cur;  //指向当前元素
         pointer m_first; //当前元素所在缓冲区的头
         pointer m_last; //当前元素所在缓冲区的尾
         pointer* m_node; //map对应的缓冲区
     public:
+        __deque_iterator() {}
+        //允许非const到const转换
+        template < typename NON_CONST,
+        typename =  typename std::enable_if< std::is_convertible< NON_CONST*, T*>::value >::type >
+        __deque_iterator( const __deque_iterator< NON_CONST, BufSiz >& other )
+        : m_cur( other.m_cur), m_first( other.m_first ),m_last( other.m_last ), 
+        m_node( const_cast<typename __deque_iterator<T, BufSiz>::pointer*>(other.m_node) )
+        {}
         static size_t buffer_size() {
             return __deque_buf_size( BufSiz, sizeof(T) );
         }
         //operator*
-        T& operator*() const {
+        T& operator*() {
             return *m_cur;
         }
-        pointer  operator->() const {
-            return &(*m_cur);
+        const T& operator*() const {
+            return *m_cur;
+        }
+        T*  operator->() {
+            return m_cur;
+        }
+        const T* operator->() const {
+            return m_cur;
         }
         //operator-
         difference_type operator-( const __deque_iterator& other ) const {
@@ -154,6 +170,7 @@ namespace thinContainers {
     class thin_deque {
     public:
         using iterator = __deque_iterator< T, BufSiz >;
+        using const_iterator = __deque_iterator< const T, BufSiz >;
         // using const_iterator = __list_const_iterator< T >;
         // using reverse_iterator = __list_reverse_iterator< T >;
         // using const_reverse_iterator = __list_const_reverse_iterator< T >;
@@ -180,7 +197,7 @@ namespace thinContainers {
         thin_deque() {}
         thin_deque( size_type n, const T& value ) {
             // m_create_map_and_nodes( n );
-            std::cout << "bufferSize = " << m_get_buffer_size() << std::endl;
+            // std::cout << "bufferSize = " << m_get_buffer_size() << std::endl;
             m_fill_initialize( n, value );
         }
         //析构函数
@@ -202,6 +219,9 @@ namespace thinContainers {
         }
         //begin()
         iterator begin() {
+            return m_beg;
+        }
+        const_iterator begin() const {
             return m_beg;
         }
         //end()

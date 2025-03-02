@@ -6,23 +6,24 @@
 
 using namespace thinContainers;
 
+void func( thin_deque< int >::const_iterator con_iter ) {
+    std::cout << "HelloWorld!\n";
+    return;
+}
+
 void test1( void ) {
-    thin_deque< int > deq1( 63, 9 );
-    for ( int i = 0; i != 63; ++i ) {
-        deq1[i] = i + 1;
-    }
-    for ( int i = 0; i != 100; ++i ) {
-        deq1.push_front( -i );
-    }
-    // deq1.push_front( 0 );
-    // deq1.push_front( -1 );
-    /* for ( int i = 64; i != 100; ++i ) {
-        deq1.push_back( i );
-    } */
-    std::cout << deq1.size() << std::endl;
-   /*  for ( size_t i = 0; i != deq1.size(); ++i ) {
-        deq1[i] = i + 1;
-    } */
+    thin_deque< int > deq1( 1, 9 );
+    thin_deque < int >::const_iterator iter = deq1.begin();
+    std::cout << *iter << std::endl;
+    // *iter = 100;
+    deq1.push_back( 10 );
+    deq1.push_back( 100 );
+    ++iter;
+    std::cout << *iter << std::endl;
+    ++iter;
+    std::cout << *iter << std::endl;
+    auto it = std::find( deq1.begin(), deq1.end(), 10 );
+    std::cout << *it << std::endl;
     for ( auto elem : deq1 ) {
         std::cout << elem << " ";
     }
@@ -31,5 +32,7 @@ void test1( void ) {
 
 int main( void ) {
     test1();
+    thin_deque< int > de01( 3, 66 );
+    func( de01.begin() );
     return 0;
 }
