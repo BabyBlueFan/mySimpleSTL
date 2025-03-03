@@ -39,7 +39,7 @@ namespace thinContainers {
         pointer* m_node; //map对应的缓冲区
     public:
         __deque_iterator() {}
-        //允许非const到const转换
+        //note: 允许非const到const转换
         template < typename NON_CONST,
         typename =  typename std::enable_if< std::is_convertible< NON_CONST*, T*>::value >::type >
         __deque_iterator( const __deque_iterator< NON_CONST, BufSiz >& other )
@@ -49,6 +49,7 @@ namespace thinContainers {
         static size_t buffer_size() {
             return __deque_buf_size( BufSiz, sizeof(T) );
         }
+        //mark:迭代器的各种操作
         //operator*
         T& operator*() {
             return *m_cur;
@@ -158,6 +159,14 @@ namespace thinContainers {
         bool operator<( const __deque_iterator& other ) const {
             return (m_node == other.m_node) ? ( m_cur < other.m_cur ) : ( m_node < other.m_node );
         }
+        //operator=
+        __deque_iterator& operator=( const __deque_iterator& other ) {
+            m_cur = other.m_cur;
+            m_first = other.m_first;
+            m_last = other.m_last;
+            m_node = other.m_node;
+            return *this;
+        }
     protected:
         inline void m_set_node( pointer* new_node ) {
             m_node = new_node;
@@ -197,7 +206,7 @@ namespace thinContainers {
         thin_deque() {}
         thin_deque( size_type n, const T& value ) {
             // m_create_map_and_nodes( n );
-            // std::cout << "bufferSize = " << m_get_buffer_size() << std::endl;
+            std::cout << "bufferSize = " << m_get_buffer_size() << std::endl;
             m_fill_initialize( n, value );
         }
         //析构函数
@@ -297,8 +306,125 @@ namespace thinContainers {
             }
         }
         //pop_front()
-
-        //clear()用来清除整个deque，回归到最初状态（无任何元素）。但是保有一个缓冲区
+        void pop_front() {
+            if ( m_beg == m_end ) {
+                return;
+            }
+            if ( m_beg.m_cur == m_beg.m_last - 1 ) {
+                m_destroy( m_beg.m_cur );
+                pointer ptr = *(m_beg.m_node);
+                ++m_beg;
+                m_deallocate( ptr, m_get_buffer_size() );
+            } else {
+                m_destroy( m_beg.m_cur );
+                ++m_beg;
+            }
+        }
+        //clear()用来清除整个deque，回归到最初状态（无任何元素）。但是`保留一个缓冲区` --保留m_beg所在的缓冲区
+        //m_beg 和  m_end 中间的缓冲区必然是饱和的。
+        void clear() {
+            if ( m_beg == m_end ) {
+                return;
+            }
+            if ( m_beg.m_node == m_end.m_node ) { //m_beg 和 m_end在一个缓冲区中
+                for ( ; m_beg != m_end; ++m_beg ) {
+                    m_destroy( m_beg.m_cur );
+                }
+            } else {
+                for ( pointer* map_ptr = m_beg.m_node + 1; map_ptr != m_end.m_node; ++map_ptr ) {
+                    //首先析构元素
+                    for ( size_type cnt = 0; cnt != m_get_buffer_size(); ++cnt ) {
+                        m_destroy( *(map_ptr) + cnt );
+                    }
+                    //释放缓冲区
+                    m_deallocate( *(map_ptr), m_get_buffer_size() );
+                }
+                //析构m_end所在的缓冲区中的元素
+                for ( pointer elem_ptr = m_end.m_first; elem_ptr != m_end.m_cur; ++elem_ptr ) {
+                    m_destroy( elem_ptr );
+                }
+                //释放m_end所在的缓冲区
+                m_deallocate( *(m_end.m_node), m_get_buffer_size() );
+                //析构m_beg所在的缓冲区中的元素
+                for ( pointer elem_ptr = m_beg.m_cur; elem_ptr != m_beg.m_last; ++elem_ptr ) {
+                    m_destroy( elem_ptr );
+                }
+                //最后使m_beg 和 m_end 指向同一个区域
+                m_end = m_beg;
+            }
+        }
+        // erase()
+        //erase( iterator posIter ) :清除posIter所指的元素
+        iterator erase( iterator posIter ) {
+            iterator nextIter = posIter + 1;
+            difference_type dis = posIter - m_beg;
+            //判断删除点之前和之后的元素个数，选择较少的区段进行移动
+            if ( dis < difference_type( size() >> 1 ) ) {
+                std::copy_backward( m_beg, posIter, nextIter );
+                pop_front();
+            } else {
+                // iterator ii = m_end - 1;
+                std::copy( nextIter, m_end, posIter );
+                pop_back();
+            }
+            return posIter;
+        }
+        iterator erase( iterator first, iterator last ) {
+            if ( first == m_beg && last == m_end ) {
+                clear();
+                return m_end;
+            }
+            difference_type fir_beg_dis = first - m_beg;
+            difference_type end_last_dis = m_end -last;
+            difference_type dis = last - first;
+            iterator retIter = m_end;
+            if ( fir_beg_dis < end_last_dis ) {
+                std::copy_backward( m_beg, first, last );
+                /* for ( difference_type cnt = 0; cnt != dis; ++cnt ) {
+                    m_destroy( m_beg.m_cur + cnt );
+                }
+                // iterator temp = m_beg;
+                pointer* map_node = m_beg.m_node;
+                m_beg += dis; 
+                for ( ; map_node != m_beg.m_node; ++map_node ) {
+                    m_deallocate( *(map_node), m_get_buffer_size() );
+                } */
+                for ( difference_type cnt = 0; cnt != dis; ++cnt ) {
+                    pop_front();
+                }
+                retIter = last;
+            } else {
+                std::copy( last, m_end, first );
+                for ( difference_type cnt = 0; cnt != dis; ++cnt ) {
+                    pop_back();
+                }
+                retIter = first;
+            }
+            return retIter;
+        }
+        //insert
+        iterator insert( iterator posIter, const T& value ) {
+            if ( posIter == m_beg ) {
+                push_front( value );
+            } else if (posIter == m_end ) {
+                push_back( value );
+            } else {
+                difference_type dis_1 = posIter - m_beg;
+                difference_type dis_2 = m_end - posIter;
+                if ( dis_1 < dis_2 ) {
+                    push_front( T() );
+                    posIter = m_beg + dis_1 + 1;
+                    std::copy( m_beg + 1, posIter, m_beg );
+                    *(--posIter) = value;
+                } else {
+                    push_back( T() );
+                    posIter = m_end - dis_2 - 1;
+                    std::copy_backward( posIter, m_end - 1, m_end );
+                    *posIter = value;
+                }
+            }
+            return posIter;
+        }
     protected:
         //缓冲区的大小计算
         static size_t m_get_buffer_size() {
