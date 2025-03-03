@@ -162,6 +162,10 @@ C++ STL的学习和简单地实现
 - [x] list& operator=(list&& other) noexcept;// 移动赋值：将 `other` 的资源移动到当前列表（C++11起）
 - [x] list& operator=(std::initializer_list<T> ilist);// 用初始化列表 `ilist` 的内容赋值（C++11起）
 
+### deque-->thin_deque
+
+### stack-->thin_stack
+
 
 
 

@@ -1,28 +1,25 @@
-#include <type_traits>
 #include <iostream>
 
-// 仅对整数类型启用此函数
-// template <typename T>
-// typename std::enable_if<std::is_integral<T>::value>::type
 template < typename T >
-void print(T value, typename std::enable_if< std::is_integral< T >::value >::type* = nullptr ) {
-    std::cout << "Integral: " << value << std::endl;
-}
+class myClass {
+public:
+    T m_a;
+    T m_b;
+    myClass( T a = T(), T b = T() ) : m_a( a ), m_b( b ) {}
+    friend bool operator==( const myClass<T>& x, const myClass<T>&  y){
+        return x.m_a == x.m_b;
+    }
+};
 
-// 仅对浮点类型启用此函数
-template < typename T, typename = typename std::enable_if< std::is_floating_point< T >::value >::type >
-// typename std::enable_if<std::is_floating_point<T>::value>::type
-void print(T value) {
-    std::cout << "Floating: " << value << std::endl;
-}
+/* template < typename T >
+bool operator==( const myClass< T >& x, const myClass< T >& y ) {
+    return x.m_a == x.m_b;
+} */
 
-template < typename T >
-void func() {
-    std::cout << "xxx" << std::endl;
-}
-
-int main() {
-    print(42);      // 调用整数版本
-    print(3.14);    // 调用浮点版本
-    // print("hello"); // 编译错误：无匹配函数
+int main( void ) {
+    myClass< int > a, b;
+    myClass( 10, 17 ) == b;
+    myClass< std::string > c;
+    // a == c;
+    return 0;
 }
