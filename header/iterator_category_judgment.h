@@ -18,6 +18,14 @@ namespace thinContainers {
                         std::void_t< typename std::iterator_traits< T >::iterator_category::input_iterator_tag > 
                         >: std::true_type {};
 
+    //判断是否是随机迭代器
+    template < typename T, typename = void >
+    struct _is_random_access_iterator : std::false_type {};
+
+    template < typename T >
+    struct _is_random_access_iterator < T, 
+    std::void_t < typename std::iterator_traits< T >::iterator_category::random_access_iterator_tag >
+    > : std::true_type {};
 #if 0
     //迭代器的五种类型
     struct input_iterator_tag {};

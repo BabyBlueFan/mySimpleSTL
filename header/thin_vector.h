@@ -341,6 +341,7 @@ namespace thinContainers {
             m_finish = m_finish + count;
             return m_start +offset;
         }
+        //hack:判断是否是输入迭代器
         template < typename  InputIter, 
                    typename std::enable_if< _is_input_iterator< InputIter >::value>::type* = nullptr >    
         iterator insert( const_iterator posIter, InputIter first, InputIter last ) {
