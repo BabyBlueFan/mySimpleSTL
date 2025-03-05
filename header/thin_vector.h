@@ -199,7 +199,7 @@ namespace thinContainers {
         }
         //判断是否为空 empty()
         bool empty() const {
-            return size();
+            return m_start == m_finish;
         }
         //预分配空间
         void reserve( size_type new_cap ) {

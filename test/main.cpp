@@ -1,25 +1,23 @@
 #include <iostream>
+#include <functional>
+#include <vector>
+#include <type_traits>
 
-template < typename T >
-class myClass {
-public:
-    T m_a;
-    T m_b;
-    myClass( T a = T(), T b = T() ) : m_a( a ), m_b( b ) {}
-    friend bool operator==( const myClass<T>& x, const myClass<T>&  y){
-        return x.m_a == x.m_b;
-    }
-};
-
-/* template < typename T >
-bool operator==( const myClass< T >& x, const myClass< T >& y ) {
-    return x.m_a == x.m_b;
-} */
+template < typename RandomAccessIterator, typename Compare >
+void _push_heap( RandomAccessIterator first, RandomAccessIterator last, Compare comp );
 
 int main( void ) {
-    myClass< int > a, b;
-    myClass( 10, 17 ) == b;
-    myClass< std::string > c;
-    // a == c;
-    return 0;
-}
+    std::vector < int > i_vec{ 1, 2, 3 , 4 };
+    _push_heap( i_vec.begin(), i_vec.begin() + 1, std::greater< int >() ); //, std::greater< int >() ); 
+    return 0; 
+} 
+
+template < typename RandomAccessIterator, typename Compare = std::less<typename std::iterator_traits< RandomAccessIterator >::value_type>  >
+void _push_heap( RandomAccessIterator first, RandomAccessIterator last, Compare comp /* = Compare() */) {
+        // Compare comp;
+        if ( comp( *first, *last ) ) {
+            std::cout << "a < b " << std::endl;
+        } else {
+            std::cout << "a > b " << std::endl;
+        }
+    }
