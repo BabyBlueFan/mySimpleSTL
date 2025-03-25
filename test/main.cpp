@@ -1,23 +1,21 @@
 #include <iostream>
 #include <functional>
-#include <vector>
-#include <type_traits>
 
-template < typename RandomAccessIterator, typename Compare >
-void _push_heap( RandomAccessIterator first, RandomAccessIterator last, Compare comp );
+void func_ptr( int a, int b, int c ) {
+    std::cout << "this is a function pointer!\n" << a << " " << b << " " << c << "\n";
+}
+
+template < typename Functor >
+void to_call_functor( Functor func ) {
+    std::cout << "In to_call_functor!\n";
+    func();
+}
 
 int main( void ) {
-    std::vector < int > i_vec{ 1, 2, 3 , 4 };
-    _push_heap( i_vec.begin(), i_vec.begin() + 1, std::greater< int >() ); //, std::greater< int >() ); 
-    return 0; 
-} 
+    auto ff = std::bind( func_ptr, 20, 20, 20 );
+    std::function< void(void) > funcc = ff;
+    to_call_functor( funcc );
+    // funcc( 12, 14, 19 );
+    return 0;
+}
 
-template < typename RandomAccessIterator, typename Compare = std::less<typename std::iterator_traits< RandomAccessIterator >::value_type>  >
-void _push_heap( RandomAccessIterator first, RandomAccessIterator last, Compare comp /* = Compare() */) {
-        // Compare comp;
-        if ( comp( *first, *last ) ) {
-            std::cout << "a < b " << std::endl;
-        } else {
-            std::cout << "a > b " << std::endl;
-        }
-    }

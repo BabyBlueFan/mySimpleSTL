@@ -3,8 +3,11 @@
 
 #include <iostream>
 #include <memory>
+#include <functional>
+#include <thread>
 #include <new>
 #include <type_traits>
+#include "./iterator_category_judgment.h"
 
 namespace thinContainers {
     using __rb_tree_color_type = bool;
@@ -77,7 +80,7 @@ namespace thinContainers {
                 node = node->right;
             } else if ( node->left != nullptr ) {
                 base_ptr y = node->left;
-                while ( y->right == nullptr ) {
+                while ( y->right != nullptr ) {
                     y = y->right;
                 }
                 node = y;
@@ -147,6 +150,18 @@ namespace thinContainers {
         }
 
     }; //__rb_tree_iterator
+    
+    //先序遍历
+    template < typename T, typename Functor >
+    void __DLR_traverse( __rb_tree_node< T >* root_node, Functor do_what ) {
+        using node_type = __rb_tree_node< T >;
+        if ( root_node == nullptr ) {
+            return;
+        }
+        do_what( root_node );
+        __DLR_traverse( (node_type*)root_node->left,do_what );
+        __DLR_traverse( (node_type*)root_node->right, do_what );
+    }
 
     template < typename Key, typename Value, typename KeyOfValue, typename Compare, 
     typename Alloc = std::allocator< __rb_tree_node< Value > > >
@@ -189,8 +204,13 @@ namespace thinContainers {
         void m_destroy_node( link_type p ) {
             get_allocator().destroy( &(p->value_field) );
         }
+        void m_destory_and_deallocate_node( link_type x ) {
+            m_destroy_node( x );
+            m_deallocate_node( x );
+        }
 
     protected:
+    //goto:rb_tree的数据成员
         size_type node_count; //节点的数量
         link_type header; //哨兵节点
         Compare key_compare; //节点的键值大小比较准则
@@ -251,13 +271,14 @@ namespace thinContainers {
         }
     public:
         using iterator = __rb_tree_iterator< value_type, reference, pointer >;
+        using const_iterator =typename  __rb_tree_iterator< value_type, reference, pointer >::const_iterator;
 
     private:
         iterator __insert( base_ptr x, base_ptr y, const value_type& v );
         link_type __copy( link_type x, link_type y );
         void __erase( link_type x );
-        
-        //空红黑树
+        void __double_black( link_type x, link_type x_ori );
+        //空红黑树--初始化header节点
         void init() {
             header = m_allocate_node();
             color( header ) = __rb_tree_red;
@@ -266,27 +287,152 @@ namespace thinContainers {
             leftmost() = header;
             rightmost() = header;
         }
+         //后序遍历：
+            void __LRD_traverse( link_type root ) {
+            // using node_type = link_type;
+            if ( root == nullptr ) {
+                return;
+            }
+            if ( root->left == nullptr && root->right == nullptr ) {
+                // std::cout << "value: " << root->value_field << " color: " << root->color << std::endl;
+                // func( root );
+                m_destory_and_deallocate_node( (link_type)root );
+                return;
+            }
+
+            if ( root->left != nullptr ) {
+                __LRD_traverse( (link_type)root->left );
+            }
+            if ( root->right != nullptr ) {
+                __LRD_traverse( (link_type)root->right );
+                // func( root );
+                m_destory_and_deallocate_node( (link_type)root );
+                // std::cout << "value: " << root->value_field << " color: " << root->color << std::endl;
+            } else {
+                // func( root );
+                m_destory_and_deallocate_node( (link_type)root );
+                // std::cout << "value: " << root->value_field << " color: " << root->color << std::endl;
+            }
+        }
+
+        //先序遍历
+        void __DLR_traverse_copy( link_type rt, link_type x ,const rb_tree& other ) {
+            if ( x == nullptr ) {
+                // m_destroy_node( rt );
+                m_deallocate_node( rt );
+                return;
+            }
+            m_construct_node( rt, x->value_field );
+            rt->color = x->color;
+            if ( x->left != nullptr ) {
+                rt->left = m_allocate_node();
+                rt->left->parent = rt;
+            }
+            if ( x->right != nullptr ) {
+                rt->right = m_allocate_node();
+                rt->right->parent = rt;
+            }
+            if ( x == other.root() ) {
+                rt->parent = header;
+                header->parent = rt;
+            }
+            if ( other.leftmost() == x ) {
+                header->left = rt;
+            }
+            if ( other.rightmost() == x ) {
+                header->right = rt;
+            }
+            __DLR_traverse_copy((link_type)rt->left ,(link_type)x->left, other );
+            __DLR_traverse_copy( (link_type)rt->right, (link_type)x->right, other );
+        }
+
+    class cnt_key
+    {
+    public:
+        size_t cnt;
+        Key key_value;
+        cnt_key( size_t c, Key k ) : cnt( c ), key_value( k ) {}
+        void  operator()( link_type node ) {
+            if ( !Compare()( key_value, key(node) ) && !Compare()( key(node), key_value) ) {
+                ++cnt;
+            }
+        }
+    };
 
     public:
+        //goto:rb_tree的构造函数
         rb_tree( const Compare& comp = Compare() ) : node_count( 0 ), key_compare( comp ) {
             init();
         }
+        //复制构造函数
+        rb_tree( const rb_tree& other ) 
+        : node_count( other.node_count ), key_compare( other.key_compare)  {
+            init();//节点指针header以完成
+            link_type r_node =  m_allocate_node();
+            __DLR_traverse_copy( r_node, other.root(), other );
+        }
         ~rb_tree() {
-            clear( (link_type)header->parent );
+            clear();
             m_deallocate_node( header );
         }
-
-        void clear( link_type x ) {
-            if ( x == nullptr ) {
-                return;
+        //clear:需要后序遍历
+        void clear() {
+            __LRD_traverse( root() );
+        }
+        rb_tree< Key, Value, KeyOfValue, Compare, Alloc >& operator=( const rb_tree< Key, Value, KeyOfValue, Compare, Alloc >& other ) {
+            if ( this == &other ) {
+                return *this;
             }
-            clear( left(x) );
-            m_destroy_node(x);
-            m_deallocate_node(x);
-            clear( right(x) );
+            clear();
+            link_type r_node = m_allocate_node();
+            __DLR_traverse_copy( r_node, other.root(), other );
+            node_count = other.node_count;
+            key_compare = other.key_compare;
+            return *this;
         }
 
-        rb_tree< Key, Value, KeyOfValue, Compare, Alloc >& operator=( const rb_tree< Key, Value, KeyOfValue, Compare, Alloc >& other );
+        friend bool operator==( const rb_tree& a, const rb_tree& b ) {
+            if ( a.size() != b.size() ) {
+                return false;
+            }
+            if ( &a == &b ) {
+                return true;
+            }
+            auto iter_a = a.begin();
+            auto iter_b = b.begin();
+            bool rt = true;
+            while ( iter_a != a.end() ) {
+                if ( *(iter_a++) != *(iter_b++) ) {
+                    rt = false;
+                    break;
+                }
+            }
+            return rt;
+        }
+
+        friend bool operator<( const rb_tree& a, const rb_tree& b ) {
+            auto iter_a = a.begin();
+            auto iter_b = b.begin();
+            // size_t shorter = ( a.size() < b.size() ) ? a.size() : b.size();
+            while ( iter_a != a.end() && iter_b != b.end() ) {
+                if ( *(iter_a++) != *(iter_b++) ) {
+                    break;
+                }
+            }
+            // std::cout << *iter_a << std::endl;
+            // std::cout << *iter_b << std::endl;
+            // std::cout << *(--iter_a) << std::endl;
+            // std::cout << *(--iter_b) << std::endl;
+            if ( iter_a == a.end() && iter_b != b.end() ) {
+                return true;
+            } else {
+                if ( *(--iter_a) < *(--iter_b) ) {
+                    return true;
+                } else {
+                    return false;
+                }
+            }
+        }
 
         Compare key_comp() const {
             return key_compare;
@@ -297,6 +443,13 @@ namespace thinContainers {
         iterator end() {
             return header;
         }
+        iterator begin() const {
+            return leftmost();
+        }
+        iterator end() const {
+            return header;
+        }
+
         bool empty() const {
             return node_count == 0;
         }
@@ -307,13 +460,244 @@ namespace thinContainers {
             return size_type(-1);
         }
 
+        void swap( rb_tree& other ) {
+            size_type cnt = node_count; node_count = other.node_count; other.node_count = cnt;
+            auto ptr_node = header->parent; header->parent = other.header->parent; other.header->parent = ptr_node;
+            header->parent->parent = header;
+            other.header->parent->parent = other.header;
+            ptr_node = header->left; header->left = other.header->left; other.header->left = ptr_node;
+            ptr_node = header->right; header->right = other.header->right; other.header->right = ptr_node;
+        }
+        size_type count( const Key& key_value ) const {
+            size_type cnt = 0;
+            link_type x = root();
+            while ( x != nullptr ) {
+                if ( !key_compare( key_value, key(x) ) && !key_compare( key(x), key_value ) ) {
+                    cnt_key cout_class( cnt, key_value );
+                    auto cout_class_func = std::bind( &cnt_key::operator(), &cout_class, std::placeholders::_1 );
+                    std::function< void(link_type) > cnt_functor = cout_class_func;
+                    __DLR_traverse( x, cnt_functor );
+                    cnt = cout_class.cnt;
+                    break;
+                } else if ( key_compare( key_value, key(x) ) ) {
+                    x = left(x);
+                } else if ( key_compare( key(x), key_value ) ) {
+                    x = right(x);
+                }
+            }   
+            return cnt;
+        }
+
         //将x插入到rb-tree中，‘保持节点独一无二’
         std::pair< iterator, bool > insert_unique( const value_type& x );
+        //将区间[ first, last )插入到红黑树中，保持 ‘独一无二’
+        template < typename InputIterator, 
+        typename std::enable_if< _is_input_iterator< InputIterator >::value>::type* = nullptr >
+        void insert_unique( InputIterator first, InputIterator last ) {
+            while ( first != last ) {
+                insert_unique( *(first++) );
+            }
+        }
         //将x插入到rb-tree中， '允许节点重复'
         iterator insert_equal( const value_type& x );
 
         iterator find( const Key& k ) const;
+
+        //删除函数
+        void erase( iterator position ) {
+            link_type x = (link_type)position.node;
+            if ( x == nullptr ) {
+                return;
+            }
+            if ( left( x ) != nullptr && right(x) != nullptr ) {
+                link_type tmp = (link_type)(( ++position).node);//得到中序后继
+                x->value_field = tmp->value_field;
+                x = tmp; 
+            }
+            if ( x == leftmost() ) {
+                header->left =  (++position).node;
+            } else if ( x == rightmost() ) {
+                header->right = (--position).node;
+            }
+            __erase( x );
+            --node_count;
+        }
+
+        size_type erase( const Key& x ) {
+            size_type cnt =  count( x ); 
+            size_type tmp = cnt;
+            // iterator iter = find( x ) ;
+            while( tmp-- ) {
+                iterator iter = find( x );
+                erase( iter );
+            }
+            return cnt;
+        }
+
+
     }; //rb_tree
+
+    template < typename Key, typename Value, typename KeyOfValue, typename Compare, typename Alloc >
+    void rb_tree< Key, Value, KeyOfValue, Compare, Alloc >::__erase( link_type x ) {
+        if ( x == nullptr ) {
+            return;
+        }
+        /**确定删除节点是左孩子还是右孩子亦或是根节点**/
+        link_type x_parent = parent( x );
+        link_type x_left = left(x);
+        link_type x_right = right(x);
+        link_type x_sibling = nullptr;
+        char l_or_r = 'l';
+        if ( parent( x_parent ) == x ) { //删除的节点是根节点
+            l_or_r = 'o';
+        } else if ( left( x_parent ) == x ) {
+            x_sibling = right( x_parent );
+            l_or_r = 'l';
+        } else if ( right( x_parent ) == x ) {
+            x_sibling = left( x_parent );
+            l_or_r = 'r';
+        }
+        /******************************************************************/
+
+        if ( x_left != nullptr && x_right == nullptr ) { //只有左孩子
+            parent( x_left ) = x_parent;
+            color( x_left ) = __rb_tree_black;
+            if ( l_or_r == 'l' ) {
+                left( x_parent ) = x_left;
+            } else if ( l_or_r == 'r' ){
+                right( x_parent ) = x_left;
+            } else if ( l_or_r == 'o' ) {
+                parent( x_parent ) = x_left;
+            }
+        } else if ( x_right != nullptr && x_left == nullptr) {//只有右孩子
+            parent( x_right ) = x_parent;
+            color( x_right ) = __rb_tree_black;
+            if ( l_or_r == 'l' ) {
+                left( x_parent ) = x_right;
+            } else if ( l_or_r == 'r' ){
+                right( x_parent ) = x_right;
+            } else if ( l_or_r == 'o' ) {
+                parent( x_parent ) = x_right;
+            }
+        } else if ( x_left == nullptr && x_right == nullptr ) { // 没有孩子
+            if ( color(x) == __rb_tree_red ) { //删除的节点是红色
+                if ( l_or_r == 'l' ) {
+                    left( x_parent ) = nullptr;
+                } else {
+                    right( x_parent ) = nullptr;
+                }
+            } else {//删除节点是黑色
+                __double_black( x, x );
+            }
+        } 
+        m_destory_and_deallocate_node( x );
+    }
+
+    //void __double_black( link_type x );
+    template < typename Key, typename Value, typename KeyOfValue, typename Compare, typename Alloc >
+    void rb_tree< Key, Value, KeyOfValue, Compare, Alloc >::__double_black( link_type x, link_type x_ori) {
+        // link_type y = (link_type)header->parent;
+        link_type x_parent = parent( x );
+        link_type x_left = left(x);
+        link_type x_right = right(x);
+        link_type x_sibling = nullptr;
+        char l_or_r = 'l';
+        if ( parent( x_parent ) == x ) {
+            l_or_r = 'o';
+        } else if ( left( x_parent ) == x ) {
+            x_sibling = right( x_parent );
+            l_or_r = 'l';
+        } else if ( right( x_parent ) == x ) {
+            x_sibling = left( x_parent );
+            l_or_r = 'r';
+        }
+        if ( x_sibling == nullptr ) { //兄弟节点是空
+            if ( l_or_r == 'l' ) {
+                if ( x == x_ori ) {
+                    left( x_parent ) = nullptr;
+                }
+                if ( color( x_parent ) == __rb_tree_red || x_parent == root() ) {
+                    color( x_parent ) = __rb_tree_black;
+                } else {
+                    __double_black( x_parent, x_ori );
+                }
+            } else if ( l_or_r == 'r' ) {
+                if ( x == x_ori ) {
+                    right( x_parent ) = nullptr;
+                }
+                if ( color( x_parent ) == __rb_tree_red || x_parent == root() ) {
+                    color( x_parent ) = __rb_tree_black;
+                } else {
+                    __double_black( x_parent, x_ori );
+                }
+            } else {
+                if ( x == x_ori ) {
+                    parent( x_parent ) = nullptr;
+                }
+            }
+        } else if ( color( x_sibling ) == __rb_tree_black ) { //兄弟节点是黑色
+            link_type x_sibling_left = left( x_sibling );
+            link_type x_sibling_right = right( x_sibling );
+            //兄弟的孩子全是黑色
+            if ( (x_sibling_left == nullptr || color( x_sibling_left ) == __rb_tree_black) && 
+                 (x_sibling_right == nullptr || color( x_sibling_right) == __rb_tree_black) ) {
+                    color( x_sibling ) = __rb_tree_red;
+                    if ( l_or_r == 'l' && x == x_ori ) {
+                        left( x_parent ) = nullptr;
+                    } else if ( l_or_r == 'r' && x == x_ori ){
+                        right( x_parent ) = nullptr;
+                    }
+                    if ( color( x_parent ) == __rb_tree_red || x_parent == root() ) {
+                        color( x_parent ) = __rb_tree_black;
+                    }  else {
+                        __double_black( x_parent, x_ori );
+                    }
+                } else { //兄弟的孩子至少一个红色
+                    if ( l_or_r == 'l' ) {
+                        if ( x == x_ori ) {
+                            left( x_parent ) = nullptr;
+                        }
+                        if ( x_sibling_right != nullptr && color( x_sibling_right ) == __rb_tree_red ) { //RR型
+                            color( x_sibling_right ) = color( x_sibling );
+                            color( x_sibling ) = color( x_parent );
+                            color( x_parent ) = __rb_tree_black;
+                            __rb_tree_rotate_left( x_parent, header->parent ); 
+                        } else { //RL型
+                            color( x_sibling_left ) = color( x_parent );
+                            color( x_parent ) = __rb_tree_black;
+                            __rb_tree_rotate_right( x_sibling, header->parent );
+                            __rb_tree_rotate_left( x_parent, header->parent );
+                        }
+                    } else {
+                        if ( x == x_ori ) {
+                            right( x_parent ) = nullptr;
+                        }
+                        if ( x_sibling_left != nullptr && color( x_sibling_left ) == __rb_tree_red ) { //LL
+                            color( x_sibling_left ) = color( x_sibling );
+                            color( x_sibling ) = color( x_parent );
+                            color( x_parent ) = __rb_tree_black;
+                            __rb_tree_rotate_right( x_parent, header->parent );
+                        } else { //LR
+                            color( x_sibling_right ) = color( x_parent );
+                            color( x_parent ) = __rb_tree_black;
+                            __rb_tree_rotate_left( x_sibling, header->parent );
+                            __rb_tree_rotate_right( x_parent, header->parent );
+                        }
+                    }
+                }
+        } else { //兄弟节点是红色
+            if ( l_or_r == 'l' ) {
+                color( x_sibling ) = !color( x_sibling );
+                color( x_parent ) = !color( x_parent );
+                __rb_tree_rotate_left( x_parent, header->parent );
+            } else {
+                color( x_sibling ) = !color( x_sibling );
+                color( x_parent ) = !color( x_parent );
+                __rb_tree_rotate_right( x_parent, header->parent );
+            }
+            __double_black( x, x_ori );
+        }
+    }
 
     template< typename Key, typename Value, typename KeyOfValue, typename Compare, typename Alloc >
     typename rb_tree< Key, Value, KeyOfValue, Compare, Alloc >::iterator
@@ -374,6 +758,8 @@ namespace thinContainers {
         }
         return std::pair< iterator, bool >( j, false );
     }
+    // template < typename InputIterator >
+
     /* 
     @param x 旋转点
     */

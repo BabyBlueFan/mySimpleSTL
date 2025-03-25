@@ -166,7 +166,86 @@ C++ STL的学习和简单地实现
 
 ### stack-->thin_stack
 
+### 红黑树-->rb_tree
+***
+#### 构造函数
+- [x] 默认构造函数
+- [x] 复制构造函数
+- [x] 析构函数
 
+#### 容量相关
+- [x] empty()
+- [x] size()
+- [x]  max_size()
+
+#### 操作符
+- [x] operator=
+- [x] operator==
+- [x] operator<
+
+#### 迭代器
+- [x] begin()
+- [x] end()
+- [ ] rbegin()
+- [ ] rend()
+
+#### 修改操作
+- insert()
+  - [ ] iterator insert_unique(iterator hint, const value_type& value);--使用提示位置优化插入
+  - [x] template <class InputIterator> void insert_unique(InputIterator first, InputIterator last);--插入迭代器范围内的元素。
+  - [x] std::pair< iterator, bool > insert_unique( const value_type& x );
+
+- erase()
+  - [x] size_type erase(const key_type& key);--删除指定键的元素，返回删除的数量（0或1）。
+  - [x] void erase(iterator pos);--删除迭代器指向的元素。
+- [x] clear()
+- [x] swap( set& other )
+
+### set-->thin_set
+#### 构造函数
+- [x] 默认构造函数
+- [x] 复制构造函数
+- [x] 范围构造函数
+- [x] 析构函数
+
+#### 容量相关
+- [x] empty()
+- [x] size()
+- [x]  max_size()
+
+#### 操作符
+- [x] operator=
+- [x] operator==
+- [x] operator<
+
+#### 迭代器
+- [x] begin()
+- [x] end()
+- [ ] rbegin()
+- [ ] rend()
+
+#### 修改操作
+- insert()
+  - [x] pair<iterator, bool> insert(const value_type& value);--插入元素，返回迭代器和是否成功的布尔值。
+  - [ ] iterator insert(iterator hint, const value_type& value);--iterator insert(iterator hint, const value_type& value);
+  - [x] template <class InputIterator> void insert(InputIterator first, InputIterator last);--插入迭代器范围内的元素。
+
+- erase()
+  - [x] size_type erase(const key_type& key);--删除指定键的元素，返回删除的数量（0或1）。
+  - [x] void erase(iterator pos);--删除迭代器指向的元素。
+- [x] clear()
+- [x] swap( set& other )
+
+#### 查找操作
+- [x] iterator find(const key_type& key) const;
+- [x] size_type count(const key_type& key) const
+- [ ] iterator lower_bound(const key_type& key) const; --返回第一个 不小于 key 的元素的迭代器。
+- [ ] iterator upper_bound(const key_type& key) const; -- 返回第一个 大于 key 的元素的迭代器。
+- [ ] pair<iterator, iterator> equal_range(const key_type& key) const;--返回包含所有等于 key 的元素的范围（对于 set 最多一个元素）。
+
+#### 观察器
+- [ ] key_compare key_comp() const;--返回用于键比较的函数对象（如 less<Key>）。
+- [ ] value_compare value_comp() const; -- 对 set 而言等价于 key_comp()。
 
 
 
