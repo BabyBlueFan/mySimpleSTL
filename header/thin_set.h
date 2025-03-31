@@ -43,7 +43,6 @@ namespace thinContainers {
         /* using reverse_iterator = typename rep_type::const_reverse_iterator;
         using const_reverse_iterator = typename rep_type::const_reverse_iterator; */
 
-        //goto:set的构造函数
         //默认构造函数
         thin_set() : t( Compare() ) {}
         explicit thin_set( const Compare& comp ) : t( comp ) {}
@@ -130,11 +129,10 @@ namespace thinContainers {
         size_type erase( const key_type& x ) {
             return t.erase( x );
         }
-        //todo:erase( first, last )
-        /* void erase( iterator first, iterator last ) {
+        void erase( iterator first, iterator last ) {
             using rep_iterator = typename rep_type::iterator;
             t.erase( (rep_iterator&)first, (rep_iterator&)last );
-        } */
+        }
 
         void clear() {
             t.clear();

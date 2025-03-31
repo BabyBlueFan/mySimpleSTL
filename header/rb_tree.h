@@ -210,7 +210,7 @@ namespace thinContainers {
         }
 
     protected:
-    //goto:rb_tree的数据成员
+    //mark:rb_tree的数据成员
         size_type node_count; //节点的数量
         link_type header; //哨兵节点
         Compare key_compare; //节点的键值大小比较准则
@@ -360,7 +360,7 @@ namespace thinContainers {
     };
 
     public:
-        //goto:rb_tree的构造函数
+        //mark:rb_tree的构造函数
         rb_tree( const Compare& comp = Compare() ) : node_count( 0 ), key_compare( comp ) {
             init();
         }
@@ -532,6 +532,12 @@ namespace thinContainers {
                 erase( iter );
             }
             return cnt;
+        }
+        void erase( iterator first, iterator last ) {
+            //fixme:[ first, last ) 迭代器的范围暂时不判断
+            while ( first != last ) {
+                erase( (first++) );
+            }
         }
 
 

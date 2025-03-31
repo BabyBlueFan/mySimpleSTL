@@ -252,7 +252,7 @@ namespace thinContainers {
     @param：T* 标注类型
     @param：Distance* 标注类型 
      */
-    //XXX: 下沉构建堆还没研究
+    //todo: 下沉构建堆还没研究
     template < typename RandomAccessIterator, typename T, typename Distance >
     void __make_heap( RandomAccessIterator first, RandomAccessIterator last, T*, Distance* ) {
         if ( last - first < 2 ) { //如果长度为0或者为1，不必重新排列

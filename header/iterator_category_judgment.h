@@ -10,7 +10,7 @@
 
 
 namespace thinContainers {
-    // 判断是否是输入迭代器
+    //note: 判断是否是输入迭代器
     template< typename T, typename = void >
     struct _is_input_iterator : std::false_type {};
     template < typename T >

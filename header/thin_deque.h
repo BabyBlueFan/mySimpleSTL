@@ -49,7 +49,6 @@ namespace thinContainers {
         static size_t buffer_size() {
             return __deque_buf_size( BufSiz, sizeof(T) );
         }
-        //mark:迭代器的各种操作
         //operator*
         T& operator*() {
             return *m_cur;

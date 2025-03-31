@@ -227,7 +227,7 @@ C++ STL的学习和简单地实现
 #### 修改操作
 - insert()
   - [x] pair<iterator, bool> insert(const value_type& value);--插入元素，返回迭代器和是否成功的布尔值。
-  - [ ] iterator insert(iterator hint, const value_type& value);--iterator insert(iterator hint, const value_type& value);
+  - [ ] iterator insert(iterator hint, const value_type& value);
   - [x] template <class InputIterator> void insert(InputIterator first, InputIterator last);--插入迭代器范围内的元素。
 
 - erase()
